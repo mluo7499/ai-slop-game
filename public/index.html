@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<meta name="theme-color" content="#06090e" />
+<title>SLOPSTRIKE — tactical browser FPS</title>
+<link rel="stylesheet" href="/css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "/vendor/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============================================================ MENU -->
+  <section id="screen-menu" class="screen active">
+    <div class="menu-fx" aria-hidden="true">
+      <div class="fx-grid"></div><div class="fx-glow a"></div><div class="fx-glow b"></div><div class="fx-scan"></div>
+    </div>
+
+    <aside class="rail">
+      <div class="brand">
+        <div class="brand-mark">S//</div>
+        <h1>SLOP<span>STRIKE</span></h1>
+        <div class="brand-sub">NETCODE&nbsp;5 · BROWSER TACTICAL FPS</div>
+      </div>
+      <nav class="railnav">
+        <button class="railbtn active" data-tab="play"><span>01</span>PLAY</button>
+        <button class="railbtn" data-tab="shop"><span>02</span>SHOP</button>
+        <button class="railbtn" data-tab="loadout"><span>03</span>LOADOUT</button>
+        <button class="railbtn" data-tab="maps"><span>04</span>MAPS</button>
+        <button class="railbtn" data-tab="settings"><span>05</span>SETTINGS</button>
+      </nav>
+      <div class="railfoot">
+        <div class="profile-card">
+          <div class="pc-top"><span>OPERATOR</span><b id="menu-name">Recruit</b></div>
+          <div class="pc-xp"><div class="bar"><i id="menu-xp-fill" style="width:0%"></i></div><span id="menu-xp-text">0 / 120 XP</span></div>
+          <div class="pc-stats">
+            <div><span>LEVEL</span><b id="menu-level">1</b></div>
+            <div><span>CREDITS</span><b id="menu-coins">900</b></div>
+            <div><span>K/D</span><b id="menu-kd">0.00</b></div>
+          </div>
+          <button class="ghost small" id="btn-rename">CHANGE CALLSIGN</button>
+        </div>
+        <div class="rail-note">
+          <span class="dot"></span><span id="conn-state">CONNECTING…</span>
+        </div>
+        <button class="ghost tiny" id="btn-help">CONTROLS &amp; CREDITS</button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <!-- PLAY -->
+      <div class="panel active" data-panel="play">
+        <div class="hero">
+          <div class="hero-kicker"><span class="dot"></span> LIVE · AUTHORITATIVE 60HZ · LAG COMPENSATED</div>
+          <h2>TAKE THE <em>YARD.</em></h2>
+          <p>Five gamemodes. Server-authoritative hit registration. Build your own arena. Zero downloads, zero installs — just click and frag.</p>
+          <div class="hero-actions">
+            <button class="primary big" id="btn-quickplay">QUICKPLAY <span>→</span></button>
+            <button class="ghost big" data-goto="create">CREATE ROOM</button>
+          </div>
+          <div class="hero-chips" id="hero-modes"></div>
+        </div>
+
+        <div class="subnav">
+          <button class="subbtn active" data-sub="quick">QUICKPLAY</button>
+          <button class="subbtn" data-sub="browse">SERVER BROWSER</button>
+          <button class="subbtn" data-sub="create">CREATE ROOM</button>
+        </div>
+
+        <div class="subpanel active" data-subpanel="quick">
+          <div class="mode-grid" id="mode-grid"></div>
+        </div>
+
+        <div class="subpanel" data-subpanel="browse">
+          <div class="row between wrap">
+            <div class="row gap">
+              <button class="ghost" id="btn-refresh">REFRESH</button>
+              <div class="join-code">
+                <input id="join-code" placeholder="ROOM CODE" maxlength="5" autocomplete="off" />
+                <button class="primary" id="btn-join-code">JOIN</button>
+              </div>
+            </div>
+            <div class="muted small" id="room-count">0 ROOMS ONLINE</div>
+          </div>
+          <div class="table-wrap">
+            <table class="rooms">
+              <thead><tr><th>ROOM</th><th>MODE</th><th>MAP</th><th>PLAYERS</th><th>STATE</th><th></th></tr></thead>
+              <tbody id="room-list"><tr><td colspan="6" class="muted">NO PUBLIC ROOMS — CREATE ONE OR HIT QUICKPLAY</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="create">
+          <div class="split">
+            <div class="form-grid">
+              <label>ROOM NAME<input id="cr-name" maxlength="30" placeholder="SLOPSTRIKE LOBBY" /></label>
+              <label>MODE<select id="cr-mode"></select></label>
+              <label>MAP<select id="cr-map"></select></label>
+              <label>PASSWORD (OPTIONAL)<input id="cr-pass" maxlength="20" placeholder="leave empty for open" /></label>
+              <label>BOTS <span class="rangeval" id="cr-bots-v">4</span>
+                <input type="range" id="cr-bots" min="0" max="10" step="1" value="4" /></label>
+              <label>MAX PLAYERS <span class="rangeval" id="cr-max-v">12</span>
+                <input type="range" id="cr-max" min="2" max="16" step="1" value="12" /></label>
+              <label class="check"><input type="checkbox" id="cr-public" checked /> LISTED AS PUBLIC</label>
+            </div>
+            <div class="rules">
+              <h4>CUSTOM RULES</h4>
+              <div class="rules-grid" id="cr-rules"></div>
+            </div>
+          </div>
+          <div class="row between">
+            <div class="muted small">Custom rules are validated server-side. Great for scrims, aim practice and absolute chaos.</div>
+            <button class="primary big" id="btn-create">CREATE &amp; DEPLOY <span>→</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHOP -->
+      <div class="panel" data-panel="shop">
+        <header class="panel-head">
+          <div><div class="kicker">ARMORY</div><h2>THE BLACK MARKET</h2><p>Cosmetics only. No pay-to-win, ever. Credits are earned by playing.</p></div>
+          <div class="balance"><span>BALANCE</span><b id="shop-coins">900</b><small>CR</small></div>
+        </header>
+        <div class="subnav" id="shop-tabs">
+          <button class="subbtn active" data-shop="finish">WEAPON FINISHES</button>
+          <button class="subbtn" data-shop="body">OPERATOR SKINS</button>
+          <button class="subbtn" data-shop="tracer">TRACERS</button>
+        </div>
+        <div class="shop-grid" id="shop-grid"></div>
+      </div>
+
+      <!-- LOADOUT -->
+      <div class="panel" data-panel="loadout">
+        <header class="panel-head">
+          <div><div class="kicker">OPERATOR</div><h2>LOADOUT</h2><p>Loadout sets your free deathmatch kit and your starting sidearm in Bomb Defusal.</p></div>
+        </header>
+        <div class="split loadout">
+          <div class="form-grid">
+            <label>PRIMARY<select id="ld-primary"></select></label>
+            <label>STARTING SIDEARM<select id="ld-secondary"></select></label>
+            <div class="divider"></div>
+            <label>PRIMARY FINISH<select id="ld-finish-primary"></select></label>
+            <label>SIDEARM FINISH<select id="ld-finish-secondary"></select></label>
+            <label>KNIFE FINISH<select id="ld-finish-knife"></select></label>
+            <label>OPERATOR SKIN<select id="ld-body"></select></label>
+            <label>TRACER<select id="ld-tracer"></select></label>
+            <div class="row gap">
+              <button class="primary" id="btn-save-loadout">SAVE LOADOUT</button>
+              <button class="ghost" data-goto="shop">OPEN SHOP</button>
+            </div>
+          </div>
+          <div class="loadout-preview">
+            <div class="lp-gun" id="lp-gun"><div class="lp-gun-body"></div><div class="lp-gun-barrel"></div><div class="lp-mag"></div></div>
+            <h4 id="lp-title">VK-47 RIFLE</h4>
+            <p id="lp-desc">Reliable, hard-hitting, unforgiving. The VK-47 rewards disciplined bursts.</p>
+            <div class="statline"><span>DAMAGE</span><div class="bar"><i id="lp-dmg"></i></div></div>
+            <div class="statline"><span>FIRE RATE</span><div class="bar"><i id="lp-rate"></i></div></div>
+            <div class="statline"><span>CONTROL</span><div class="bar"><i id="lp-ctrl"></i></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAPS -->
+      <div class="panel" data-panel="maps">
+        <header class="panel-head">
+          <div><div class="kicker">WORKSHOP</div><h2>MAP CREATOR</h2><p>Box out an arena in 3D, drop spawns and objectives, then playtest it instantly with friends.</p></div>
+          <button class="primary big" id="btn-open-editor">OPEN EDITOR <span>→</span></button>
+        </header>
+        <div class="split">
+          <div>
+            <h4 class="sect-title">BUILT-IN ARENAS</h4>
+            <div class="map-list" id="builtin-maps"></div>
+          </div>
+          <div>
+            <h4 class="sect-title">COMMUNITY MAPS</h4>
+            <div class="map-list" id="custom-maps"><div class="muted small">NO PUBLISHED MAPS YET.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="panel" data-panel="settings">
+        <header class="panel-head">
+          <div><div class="kicker">SYSTEM</div><h2>SETTINGS</h2><p>Tune the experience. Everything saves locally on this browser.</p></div>
+          <button class="ghost" id="btn-reset-settings">RESET DEFAULTS</button>
+        </header>
+        <div class="settings-grid">
+          <div class="setting">
+            <div class="set-head"><span>MOUSE SENSITIVITY</span><b id="st-sens-v">1.00</b></div>
+            <input type="range" id="st-sens" min="0.2" max="4" step="0.05" value="1" />
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>FIELD OF VIEW</span><b id="st-fov-v">78</b></div>
+            <input type="range" id="st-fov" min="60" max="110" step="1" value="78" />
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>RENDER QUALITY</span><b id="st-quality-v">HIGH</b></div>
+            <select id="st-quality">
+              <option value="low">LOW — MAX FPS</option>
+              <option value="medium">MEDIUM</option>
+              <option value="high" selected>HIGH — SHADOWS</option>
+            </select>
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>UPSCALER (DLSS-STYLE)</span><b id="st-upscale-v">QUALITY</b></div>
+            <select id="st-upscale">
+              <option value="native">NATIVE — NO UPSCALE</option>
+              <option value="quality" selected>QUALITY — 88% INTERNAL</option>
+              <option value="balanced">BALANCED — 78% INTERNAL</option>
+              <option value="performance">PERFORMANCE — 66% INTERNAL</option>
+              <option value="ultra">ULTRA PERFORMANCE — 53% INTERNAL</option>
+            </select>
+            <label class="check"><input type="checkbox" id="st-dynamic" checked /> ADAPTIVE RESOLUTION TARGET</label>
+            <p class="hint">Browsers cannot call NVIDIA DLSS — it is a native driver feature. This is our edge-aware spatial + CAS upscaler with adaptive resolution, the closest browser equivalent.</p>
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>MASTER VOLUME</span><b id="st-vol-v">65</b></div>
+            <input type="range" id="st-vol" min="0" max="1" step="0.05" value="0.65" />
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>CROSSHAIR COLOUR</span><b id="st-ch-v">#3AFF9E</b></div>
+            <input type="color" id="st-ch" value="#3aff9e" />
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>SHADOWS</span><b id="st-shadows-v">ON</b></div>
+            <label class="check"><input type="checkbox" id="st-shadows" checked /> ENABLE DYNAMIC SHADOWS (HIGH ONLY)</label>
+          </div>
+          <div class="setting">
+            <div class="set-head"><span>MINIMAP</span><b id="st-radar-v">ON</b></div>
+            <label class="check"><input type="checkbox" id="st-radar" checked /> SHOW TACTICAL RADAR</label>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============================================================ GAME -->
+  <section id="screen-game" class="screen">
+    <canvas id="viewport"></canvas>
+
+    <div id="hud" class="hud">
+      <div id="hud-scope" class="hidden"><div class="scope-v"></div><div class="scope-h"></div><div class="scope-ring"></div></div>
+      <div id="hud-vignette"></div>
+      <div id="hud-flash"></div>
+
+      <div id="hud-top">
+        <div class="team-block a"><span id="team-a-name">VANGUARD</span><b id="score-a">0</b></div>
+        <div class="clock-block">
+          <span id="phase-label">WARMUP</span>
+          <b id="match-timer">5.0</b>
+          <small id="round-label">ROUND 1</small>
+        </div>
+        <div class="team-block b"><b id="score-b">0</b><span id="team-b-name">SENTINEL</span></div>
+      </div>
+
+      <div id="objective-bar" class="hidden">
+        <span id="objective-text">SPIKE ARMED</span>
+        <div class="bar"><i id="objective-fill"></i></div>
+      </div>
+
+      <div id="radar-wrap">
+        <canvas id="radar" width="200" height="200"></canvas>
+        <span id="radar-label">MAP</span>
+      </div>
+
+      <div id="killfeed"></div>
+
+      <div id="crosshair">
+        <i class="ch t"></i><i class="ch b"></i><i class="ch l"></i><i class="ch r"></i><i class="ch dot"></i>
+      </div>
+      <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+      <div id="damage-arrows"></div>
+
+      <div id="interact-prompt" class="hidden"><kbd>E</kbd><span id="interact-text">HOLD TO PLANT</span><div class="bar"><i id="interact-fill"></i></div></div>
+
+      <div id="center-banner" class="hidden"><h2></h2><p></p></div>
+
+      <div id="vitals">
+        <div class="vital"><span>HP</span><b id="hud-hp">100</b></div>
+        <div class="vital armor"><span>ARMOR</span><b id="hud-armor">0</b></div>
+        <div id="hud-money">$4000</div>
+      </div>
+
+      <div id="weapon-panel">
+        <div class="w-name" id="hud-weapon">P9 SIDEARM</div>
+        <div class="ammo"><b id="hud-mag">15</b><span>/</span><i id="hud-reserve">60</i></div>
+        <div class="w-extras"><span id="hud-grenades">◍ 0</span><span id="hud-role"></span></div>
+      </div>
+
+      <div id="hud-chat"></div>
+      <div id="hud-chat-input" class="hidden">
+        <span>SAY</span><input id="chat-input" maxlength="140" placeholder="message your lobby…" autocomplete="off" />
+      </div>
+
+      <div id="perf"><span id="perf-fps">60</span> FPS <i>·</i> <span id="perf-ping">0</span> MS <i>·</i> <span id="perf-upscale">—</span></div>
+      <div id="hud-hint">WASD MOVE · SPACE JUMP · SHIFT WALK · CTRL CROUCH · B BUY · TAB SCORES · T CHAT</div>
+      <div id="respawn" class="hidden">RESPAWN IN <b id="respawn-time">3</b></div>
+
+      <div id="death-screen" class="hidden">
+        <div class="death-card">
+          <div class="kicker">ELIMINATED</div>
+          <h3 id="death-killer">—</h3>
+          <p id="death-weapon">—</p>
+          <div id="death-respawn">RESPAWN IN <b>3</b></div>
+        </div>
+      </div>
+
+      <div id="buy-menu" class="overlay hidden">
+        <div class="overlay-head">
+          <div><div class="kicker">BUY PHASE</div><h3>REQUISITION</h3></div>
+          <div class="balance"><span>FUNDS</span><b id="buy-money">$0</b></div>
+        </div>
+        <div class="buy-grid" id="buy-grid"></div>
+        <div class="overlay-foot"><span><kbd>1</kbd>–<kbd>9</kbd> BUY · <kbd>B</kbd>/<kbd>ESC</kbd> CLOSE</span><span class="muted">Costs are deducted server-side.</span></div>
+      </div>
+
+      <div id="scoreboard" class="overlay hidden">
+        <div class="overlay-head"><div><div class="kicker">MATCH</div><h3 id="sb-title">SCOREBOARD</h3></div><div class="muted" id="sb-sub">—</div></div>
+        <div id="sb-body"></div>
+      </div>
+
+      <div id="pause-menu" class="overlay hidden">
+        <div class="pause-card">
+          <div class="kicker">MATCH IN PROGRESS</div>
+          <h3>PAUSED</h3>
+          <p class="muted">The simulation keeps running. Get back in.</p>
+          <button class="primary big" id="btn-resume">RESUME</button>
+          <button class="ghost" id="btn-pause-settings">SETTINGS</button>
+          <button class="danger" id="btn-leave-match">LEAVE MATCH</button>
+          <div class="pause-info"><span id="pause-room">—</span><span id="pause-ping">—</span></div>
+        </div>
+      </div>
+
+      <div id="results" class="overlay hidden">
+        <div class="results-card">
+          <div class="kicker" id="res-kicker">MATCH COMPLETE</div>
+          <h2 id="res-title">VICTORY</h2>
+          <div class="res-score" id="res-score">8 — 5</div>
+          <div class="res-stats">
+            <div><span>FRAGS</span><b id="res-kills">0</b></div>
+            <div><span>DEATHS</span><b id="res-deaths">0</b></div>
+            <div><span>HEADSHOTS</span><b id="res-hs">0</b></div>
+            <div><span>K/D</span><b id="res-kd">0.00</b></div>
+          </div>
+          <div class="res-rewards hidden" id="res-rewards"></div>
+          <div id="res-table" class="res-table"></div>
+          <div class="row gap center">
+            <button class="primary big" id="btn-res-leave">BACK TO LOBBY</button>
+            <button class="ghost" id="btn-res-rematch">REMATCH</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ EDITOR -->
+  <section id="screen-editor" class="screen">
+    <div class="editor-shell">
+      <header class="editor-head">
+        <div class="brand small">
+          <div class="brand-mark">S//</div>
+          <h1>MAP<span>LAB</span></h1>
+        </div>
+        <div class="editor-title">
+          <input id="ed-name" value="MY ARENA" maxlength="28" />
+          <span id="ed-status" class="muted">READY</span>
+        </div>
+        <div class="row gap">
+          <button class="ghost" id="ed-exit">← BACK</button>
+          <button class="ghost" id="ed-save">SAVE</button>
+          <button class="ghost" id="ed-publish">PUBLISH</button>
+          <button class="primary" id="ed-test">TEST PLAY →</button>
+        </div>
+      </header>
+      <aside class="editor-tools">
+        <h4>BRUSH</h4>
+        <div class="tool-grid" id="ed-materials"></div>
+        <h4>SHAPE</h4>
+        <div class="form-grid tight">
+          <label>WIDTH<input type="number" id="ed-w" value="4" min="1" max="24" step="1" /></label>
+          <label>HEIGHT<input type="number" id="ed-h" value="3" min="0.4" max="20" step="0.4" /></label>
+          <label>DEPTH<input type="number" id="ed-d" value="4" min="1" max="24" step="1" /></label>
+          <label>ELEVATION<input type="number" id="ed-y" value="1.5" min="0" max="40" step="0.5" /></label>
+        </div>
+        <h4>TOOL</h4>
+        <div class="tool-col">
+          <button class="toolbtn active" data-tool="place">▣ PLACE BLOCK</button>
+          <button class="toolbtn" data-tool="erase">⌫ ERASE</button>
+          <button class="toolbtn" data-tool="spawnA">▲ SPAWN — VANGUARD</button>
+          <button class="toolbtn" data-tool="spawnB">▼ SPAWN — SENTINEL</button>
+          <button class="toolbtn" data-tool="site">◉ BOMB SITE</button>
+          <button class="toolbtn" data-tool="hill">◎ KOTH HILL</button>
+        </div>
+        <h4>OBJECTS</h4>
+        <div class="editor-counts">
+          <span>BLOCKS <b id="ed-count">0</b></span>
+          <span>SPAWNS <b id="ed-spawns">0</b></span>
+          <span>SITES <b id="ed-sites">0</b></span>
+        </div>
+        <div class="editor-help">
+          <b>CAMERA</b> hold <kbd>RMB</kbd> to orbit · <kbd>WHEEL</kbd> zoom · <kbd>WASD</kbd> pan<br />
+          <b>PLACE</b> <kbd>LMB</kbd> on the grid · <b>ERASE</b> <kbd>LMB</kbd> a block
+        </div>
+        <div class="row gap wrap">
+          <button class="ghost small" id="ed-clear">CLEAR</button>
+          <button class="ghost small" id="ed-export">EXPORT JSON</button>
+          <button class="ghost small" id="ed-import">IMPORT JSON</button>
+          <input type="file" id="ed-file" accept="application/json" class="hidden" />
+        </div>
+      </aside>
+      <div class="editor-view">
+        <canvas id="editor-canvas"></canvas>
+        <div class="editor-overlay">
+          <span id="ed-hover">—</span>
+          <span class="muted">grid 1m · max 1400 blocks</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="boot" class="boot">
+    <div class="boot-mark">S//</div>
+    <div class="boot-text">INITIALISING NETCODE</div>
+    <div class="boot-bar"><i></i></div>
+  </div>
+
+  <div id="toasts"></div>
+</div>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>

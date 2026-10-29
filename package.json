@@ -1,0 +1,19 @@
+{
+  "name": "slopstrike",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SLOPSTRIKE — a browser-native tactical FPS with authoritative multiplayer, five gamemodes, economy, shop and a 3D map creator.",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "smoke": "node scripts/smoke-server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "ws": "^8.18.0"
+  }
+}
