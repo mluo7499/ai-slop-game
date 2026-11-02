@@ -13,23 +13,28 @@ export const TEAM_INFO = [
   { id: 1, name: 'Sentinel', short: 'DEF', color: 0x3fa9ff, css: '#4aa8ff', spawn: 'b' },
 ];
 
+// Source/CS movement numbers converted to metres (1 unit = 0.01905 m):
+// 250 u/s run, 130 u/s walk, 85 u/s crouch, 800 u/s^2 gravity, 302 u/s jump.
+// That gives the same ~1.08 m jump height and snappy, low-air-control feel.
 export const PHYS = {
-  gravity: 20.0,
-  maxSpeed: 6.5,
-  walkSpeed: 2.7,
-  crouchSpeed: 2.5,
-  accel: 62,
-  airAccel: 14,
-  friction: 9.2,
-  jumpVel: 6.5,
+  gravity: 15.24,
+  maxSpeed: 4.76,
+  walkSpeed: 2.48,
+  crouchSpeed: 1.62,
+  accel: 5.5,
+  airAccel: 12,
+  friction: 5.2,
+  stopSpeed: 1.52,
+  airWishCap: 0.57,
+  jumpVel: 5.75,
   stepHeight: 0.42,
   radius: 0.34,
   height: 1.82,
   crouchHeight: 1.24,
   eye: 1.64,
   crouchEye: 1.06,
-  maxFall: 45,
-  jumpCooldown: 0.28,
+  maxFall: 30,
+  jumpCooldown: 0.05,
 };
 
 export const ECONOMY = {
@@ -193,6 +198,23 @@ export const CUSTOM_RULES = [
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const dist2 = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
+
+/**
+ * One pointer-lock look delta. Yaw lives in radians while pitch is stored in
+ * degrees (snapshots + the server use degrees), so the same radians-per-pixel
+ * sensitivity has to be converted for pitch. Applying it raw makes vertical
+ * look ~57x slower than horizontal.
+ */
+export function computeLook(yaw, pitch, dx, dy, sensitivity = 1, scoped = false) {
+  const sens = Math.max(0.05, sensitivity) * 0.0019 * (scoped ? 0.55 : 1);
+  let nextYaw = yaw - dx * sens;
+  if (nextYaw > Math.PI) nextYaw -= Math.PI * 2;
+  if (nextYaw < -Math.PI) nextYaw += Math.PI * 2;
+  return {
+    yaw: nextYaw,
+    pitch: clamp(pitch - (dy * sens) / DEG, -89, 89),
+  };
+}
 
 export function eyeHeight(crouchAmount) {
   return PHYS.eye + (PHYS.crouchEye - PHYS.eye) * crouchAmount;

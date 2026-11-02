@@ -28,6 +28,7 @@ export function createPlayerState(x, y, z) {
     crouchAmount: 0,
     crouched: false,
     jumpTimer: 0,
+    jumpHeld: false,
     stepPhase: 0,
     lastLand: 0,
     fallSpeed: 0,
@@ -62,10 +63,13 @@ export function groundHeight(world, x, z, from = 40) {
   return best;
 }
 
+// Source-style friction: a constant stop speed keeps the last few cm from
+// dragging on forever, while higher speeds decay proportionally.
 function applyFriction(p, dt, friction) {
   const speed = Math.hypot(p.vel[0], p.vel[2]);
-  if (speed < 0.08) { p.vel[0] = 0; p.vel[2] = 0; return; }
-  const drop = Math.max(speed, 2.5) * friction * dt;
+  if (speed < 0.05) { p.vel[0] = 0; p.vel[2] = 0; return; }
+  const control = Math.max(speed, PHYS.stopSpeed);
+  const drop = control * friction * dt;
   const k = Math.max(0, speed - drop) / speed;
   p.vel[0] *= k;
   p.vel[2] *= k;
@@ -81,43 +85,62 @@ function accelerate(p, wx, wz, wishSpeed, accel, dt) {
   p.vel[2] += accelSpeed * wz;
 }
 
-function resolveVertical(p, world, dt) {
+// Counter-Strike air control: wish speed is capped at 30 u/s (~0.57 m/s) so you
+// cannot steer freely in the air, but strafing still bends the arc. This is what
+// makes bhop / air-strafe movement feel like Source instead of Quake.
+function airAccelerate(p, wx, wz, wishSpeed, accel, dt) {
+  const wishspd = Math.min(wishSpeed, PHYS.airWishCap);
+  const current = p.vel[0] * wx + p.vel[2] * wz;
+  const add = wishspd - current;
+  if (add <= 0) return;
+  let accelSpeed = accel * wishSpeed * dt;
+  if (accelSpeed > add) accelSpeed = add;
+  p.vel[0] += accelSpeed * wx;
+  p.vel[2] += accelSpeed * wz;
+}
+
+/**
+ * Resolve the vertical move. `prevY` is the feet height BEFORE this frame's
+ * vertical integration: a landing only counts when the feet actually crossed a
+ * box top, and a ceiling only counts when the head crossed its underside. This
+ * prevents the old "snap to the nearest top and stay there" behaviour.
+ */
+function resolveVertical(p, world, prevY) {
   const height = playerHeight(p.crouchAmount);
   const r = PHYS.radius;
-  const startY = p.pos[1] - p.vel[1] * dt; // previous feet height
+  const x = p.pos[0], z = p.pos[2];
   p.onGround = false;
-  const [px, , pz] = p.pos;
+  let landY = -Infinity;
+  let ceilingY = Infinity;
+
   for (const b of world.boxes) {
-    if (p.pos[0] + r <= b.min[0] + EPS || p.pos[0] - r >= b.max[0] - EPS) continue;
-    if (p.pos[2] + r <= b.min[2] + EPS || p.pos[2] - r >= b.max[2] - EPS) continue;
-    if (p.pos[1] + height <= b.min[1] + EPS || p.pos[1] >= b.max[1] - EPS) continue;
+    if (x + r <= b.min[0] + EPS || x - r >= b.max[0] - EPS) continue;
+    if (z + r <= b.min[2] + EPS || z - r >= b.max[2] - EPS) continue;
+
     if (p.vel[1] <= 0) {
-      if (startY >= b.max[1] - 0.35) {
-        p.pos[1] = b.max[1];
-        p.vel[1] = 0;
-        p.onGround = true;
-        p.fallSpeed = 0;
+      if (prevY >= b.max[1] - EPS && p.pos[1] < b.max[1] - EPS) {
+        if (b.max[1] > landY) landY = b.max[1];
       }
-    } else {
-      p.pos[1] = b.min[1] - height - EPS;
-      p.vel[1] = 0;
+    } else if (prevY + height <= b.min[1] + EPS && p.pos[1] + height > b.min[1] + EPS) {
+      if (b.min[1] < ceilingY) ceilingY = b.min[1];
     }
+  }
+
+  if (landY > -Infinity) {
+    p.pos[1] = landY;
+    p.vel[1] = 0;
+    p.onGround = true;
+    p.fallSpeed = 0;
+  }
+  if (ceilingY < Infinity) {
+    p.pos[1] = Math.min(p.pos[1], ceilingY - height - EPS);
+    if (p.vel[1] > 0) p.vel[1] = 0;
   }
   if (p.pos[1] <= 0) {
     p.pos[1] = 0;
     p.vel[1] = 0;
     p.onGround = true;
-  }
-  // fail-safe: if we somehow ended up inside geometry, push up to the nearest surface
-  if (!p.onGround) {
-    const blocked = collidesAt(world, p.pos, height);
-    if (blocked && blocked.max[1] >= p.pos[1] && blocked.max[1] - p.pos[1] < 2.5) {
-      if (!collidesAt(world, [px, blocked.max[1] + EPS, pz], height)) {
-        p.pos[1] = blocked.max[1] + EPS;
-        p.vel[1] = 0;
-        p.onGround = true;
-      }
-    }
+    p.fallSpeed = 0;
   }
 }
 
@@ -153,10 +176,6 @@ function moveAxis(p, world, axis, dt) {
     }
     if (!hit) break;
   }
-}
-
-function isOverlappingWorld(p, world) {
-  return !!collidesAt(world, p.pos, playerHeight(p.crouchAmount));
 }
 
 /**
@@ -199,36 +218,37 @@ export function stepPlayer(p, input, world, dt, cfg = {}) {
   const walkMult = (buttons & BTN.WALK) && !p.crouched ? PHYS.walkSpeed / PHYS.maxSpeed : 1;
   const wishSpeed = PHYS.maxSpeed * speedScale * weaponMult * crouchMult * walkMult;
 
+  // Jump only on a fresh press, and only from the ground: holding space does not
+  // auto-bhop, which matches CS's default +jump behaviour.
+  const wantJump = (buttons & BTN.JUMP) !== 0;
   p.jumpTimer = Math.max(0, p.jumpTimer - dt);
-  if ((buttons & BTN.JUMP) && p.onGround && p.jumpTimer <= 0) {
+  if (wantJump && !p.jumpHeld && p.onGround && p.jumpTimer <= 0) {
     p.vel[1] = PHYS.jumpVel * (cfg.jumpScale ?? 1);
     p.onGround = false;
     p.jumpTimer = PHYS.jumpCooldown;
   }
+  p.jumpHeld = wantJump;
 
   const gravity = PHYS.gravity * (cfg.gravityScale ?? 1);
-  if (!p.onGround) {
-    applyFriction(p, dt, PHYS.friction * 0.35);
-    accelerate(p, wx, wz, wishSpeed, PHYS.airAccel, dt);
-    p.vel[1] = Math.max(-PHYS.maxFall, p.vel[1] - gravity * dt);
-  } else {
+  if (p.onGround) {
     applyFriction(p, dt, PHYS.friction);
     accelerate(p, wx, wz, wishSpeed, PHYS.accel, dt);
+    // stay glued to the surface while grounded (resolved back onto it below)
     p.vel[1] = -0.5;
+  } else {
+    airAccelerate(p, wx, wz, wishSpeed, PHYS.airAccel, dt);
+    p.vel[1] = Math.max(-PHYS.maxFall, p.vel[1] - gravity * dt);
   }
 
-  const beforeY = p.pos[1];
-  p.pos[0] += p.vel[0] * dt;
-  p.pos[2] += p.vel[2] * dt;
-  resolveVertical(p, world, dt);
-  moveAxis(p, world, 0, 0);
-  moveAxis(p, world, 2, 0);
-  // resolve horizontal penetration introduced by the vertical pass
-  if (isOverlappingWorld(p, world)) {
-    moveAxis(p, world, 0, 0);
-    moveAxis(p, world, 2, 0);
-  }
-  if (p.onGround && beforeY - p.pos[1] > 0.4) p.lastLand = beforeY - p.pos[1];
+  // Horizontal first, then vertical: landing is a swept test against the new
+  // feet height, so walking off a ledge is an actual fall instead of a freeze.
+  moveAxis(p, world, 0, dt);
+  moveAxis(p, world, 2, dt);
+  const prevY = p.pos[1];
+  p.pos[1] += p.vel[1] * dt;
+  resolveVertical(p, world, prevY);
+
+  if (p.onGround && prevY - p.pos[1] > 0.4) p.lastLand = prevY - p.pos[1];
   const speed = Math.hypot(p.vel[0], p.vel[2]);
   p.stepPhase = (p.stepPhase + speed * dt * 1.55) % (Math.PI * 2);
   if (!p.onGround) p.fallSpeed = Math.max(p.fallSpeed, -p.vel[1]);

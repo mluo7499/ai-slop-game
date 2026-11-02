@@ -35,13 +35,70 @@ function rand(seed) {
   };
 }
 
-function makeTexture(kind, color, scale, seed) {
-  const key = `${kind}:${color}`;
+/** Derive tangent-space normals + a roughness map from a colour canvas. */
+function makeDetailMaps(ctx, size, meta) {
+  const src = ctx.getImageData(0, 0, size, size).data;
+  const lum = new Float32Array(size * size);
+  for (let i = 0, p = 0; i < src.length; i += 4, p++) {
+    lum[p] = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114) / 255;
+  }
+  const normalCanvas = document.createElement('canvas');
+  normalCanvas.width = normalCanvas.height = size;
+  const normalCtx = normalCanvas.getContext('2d');
+  const normalImg = normalCtx.createImageData(size, size);
+  const roughCanvas = document.createElement('canvas');
+  roughCanvas.width = roughCanvas.height = size;
+  const roughCtx = roughCanvas.getContext('2d');
+  const roughImg = roughCtx.createImageData(size, size);
+  const strength = (meta.normalStrength ?? 1) * 2.4;
+  const baseRough = meta.roughness ?? 0.8;
+
+  for (let y = 0; y < size; y++) {
+    const up = y > 0 ? y - 1 : size - 1;
+    const down = y < size - 1 ? y + 1 : 0;
+    for (let x = 0; x < size; x++) {
+      const left = x > 0 ? x - 1 : size - 1;
+      const right = x < size - 1 ? x + 1 : 0;
+      const l = lum[y * size + left], rr = lum[y * size + right];
+      const u = lum[up * size + x], d = lum[down * size + x];
+      const nx = (l - rr) * strength;
+      const ny = (u - d) * strength;
+      const len = Math.hypot(nx, ny, 1);
+      const i = (y * size + x) * 4;
+      normalImg.data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
+      normalImg.data[i + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+      normalImg.data[i + 2] = Math.round((1 / len * 0.5 + 0.5) * 255);
+      normalImg.data[i + 3] = 255;
+      const grain = lum[y * size + x];
+      const rough = Math.max(0.04, Math.min(1, baseRough * (0.72 + (1 - grain) * 0.56)));
+      const rv = Math.round(rough * 255);
+      roughImg.data[i] = rv;
+      roughImg.data[i + 1] = rv;
+      roughImg.data[i + 2] = rv;
+      roughImg.data[i + 3] = 255;
+    }
+  }
+  normalCtx.putImageData(normalImg, 0, 0);
+  roughCtx.putImageData(roughImg, 0, 0);
+
+  const normalMap = new THREE.CanvasTexture(normalCanvas);
+  normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+  normalMap.colorSpace = THREE.NoColorSpace;
+  normalMap.anisotropy = 8;
+  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
+  roughnessMap.wrapS = roughnessMap.wrapT = THREE.RepeatWrapping;
+  roughnessMap.colorSpace = THREE.NoColorSpace;
+  roughnessMap.anisotropy = 8;
+  return { normalMap, roughnessMap };
+}
+
+function makeTexture(kind, color, scale, seed, meta = {}) {
+  const key = `${kind}:${color}:${meta.roughness ?? 0.8}:${meta.normalStrength ?? 1}`;
   if (textureCache.has(key)) return textureCache.get(key);
-  const size = 256;
+  const size = 512;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const base = new THREE.Color(color);
   const r = rand(seed || 7);
   const rgb = (c, m = 1) => `rgb(${Math.round(c.r * 255 * m)},${Math.round(c.g * 255 * m)},${Math.round(c.b * 255 * m)})`;
@@ -50,7 +107,8 @@ function makeTexture(kind, color, scale, seed) {
   ctx.fillRect(0, 0, size, size);
 
   const noise = (amount, alpha) => {
-    for (let i = 0; i < amount; i++) {
+    const count = Math.round(amount * (size * size) / (256 * 256));
+    for (let i = 0; i < count; i++) {
       const v = 0.75 + r() * 0.5;
       ctx.fillStyle = `rgba(${Math.round(base.r * 255 * v)},${Math.round(base.g * 255 * v)},${Math.round(base.b * 255 * v)},${alpha})`;
       const s = 1 + r() * 5;
@@ -173,30 +231,35 @@ function makeTexture(kind, color, scale, seed) {
     noise(600, 0.2);
   }
 
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  tex.userData.scale = scale;
-  textureCache.set(key, tex);
-  return tex;
+  const map = new THREE.CanvasTexture(canvas);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 8;
+  map.userData.scale = scale;
+  const set = { map, ...makeDetailMaps(ctx, size, meta) };
+  textureCache.set(key, set);
+  return set;
 }
 
 const materialCache = new Map();
 function getMaterial(matId) {
   if (materialCache.has(matId)) return materialCache.get(matId);
   const meta = MATERIAL_META[matId] || MATERIAL_META.concrete;
-  const texture = makeTexture(meta.kind, meta.color, meta.scale, matId.length * 977 + 13);
+  const set = makeTexture(meta.kind, meta.color, meta.scale, matId.length * 977 + 13, meta);
   const mat = new THREE.MeshStandardMaterial({
-    map: texture,
+    map: set.map,
+    normalMap: set.normalMap,
+    roughnessMap: set.roughnessMap,
+    normalScale: new THREE.Vector2(meta.normalScale ?? 0.85, meta.normalScale ?? 0.85),
     color: 0xffffff,
     metalness: meta.metalness,
-    roughness: meta.roughness,
+    roughness: 1,
     vertexColors: true,
     emissive: meta.emissive ? new THREE.Color(meta.emissive) : 0x000000,
     emissiveIntensity: meta.emissiveIntensity || 0,
     transparent: !!meta.transparent,
     opacity: meta.opacity ?? 1,
+    envMapIntensity: meta.envMapIntensity ?? 0.9,
   });
   materialCache.set(matId, mat);
   return mat;
@@ -346,13 +409,48 @@ function buildMarkers(map, group, quality) {
   return { siteMarkers, hillRings };
 }
 
-export function buildWorld(map, quality = 'high') {
+/** Procedural sky/ground equirect → PMREM environment for PBR reflections. */
+function makeEnvironment(renderer, theme) {
+  if (!renderer) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const sky = ctx.createLinearGradient(0, 0, 0, 68);
+  sky.addColorStop(0, theme.skyTop || '#141c2a');
+  sky.addColorStop(1, theme.skyBottom || '#3b4658');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, 256, 68);
+  const ground = ctx.createLinearGradient(0, 68, 0, 128);
+  ground.addColorStop(0, theme.fog || '#1b2432');
+  ground.addColorStop(1, '#070a0e');
+  ctx.fillStyle = ground;
+  ctx.fillRect(0, 68, 256, 60);
+  const glow = ctx.createRadialGradient(192, 34, 0, 192, 34, 52);
+  glow.addColorStop(0, 'rgba(255,248,226,1)');
+  glow.addColorStop(0.18, 'rgba(255,226,170,0.95)');
+  glow.addColorStop(0.55, 'rgba(255,190,120,0.28)');
+  glow.addColorStop(1, 'rgba(255,170,90,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 256, 128);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromEquirectangular(tex);
+  pmrem.dispose();
+  tex.dispose();
+  return rt;
+}
+
+export function buildWorld(map, quality = 'high', renderer = null) {
   const group = new THREE.Group();
   const theme = map.theme || {
     skyTop: '#141c2a', skyBottom: '#3b4658', fog: '#1b2432',
     fogNear: 30, fogFar: 120, sun: [0.4, 0.6, 0.2], sunColor: '#fff0d0', sunIntensity: 2, ambient: '#8fa0b8',
   };
   group.add(makeSky(theme));
+  const envRT = makeEnvironment(renderer, theme);
 
   const buckets = new Map();
   for (const block of map.blocks) {
@@ -369,10 +467,10 @@ export function buildWorld(map, quality = 'high') {
     group.add(mesh);
   }
 
-  const hemi = new THREE.HemisphereLight(new THREE.Color(theme.ambient || '#8899aa'), new THREE.Color('#59616d'), 2.15);
+  const hemi = new THREE.HemisphereLight(new THREE.Color(theme.ambient || '#8899aa'), new THREE.Color('#59616d'), 1.35);
   group.add(hemi);
   // cool fill from the opposite side so shadowed faces never go pitch black
-  const fill = new THREE.DirectionalLight(new THREE.Color('#a9c8ff'), 0.85);
+  const fill = new THREE.DirectionalLight(new THREE.Color('#a9c8ff'), 0.5);
   fill.position.set(-50, 26, -38);
   group.add(fill);
   const sun = new THREE.DirectionalLight(new THREE.Color(theme.sunColor || '#ffe9c9'), theme.sunIntensity ?? 2);
@@ -386,7 +484,8 @@ export function buildWorld(map, quality = 'high') {
     sun.shadow.camera.bottom = -48;
     sun.shadow.camera.near = 1;
     sun.shadow.camera.far = 160;
-    sun.shadow.bias = -0.0006;
+    sun.shadow.bias = -0.00035;
+    sun.shadow.normalBias = 0.025;
   }
   group.add(sun);
   group.add(sun.target);
@@ -394,7 +493,7 @@ export function buildWorld(map, quality = 'high') {
   const markers = buildMarkers(map, group, quality);
   const collider = makeWorld(map.blocks);
   return {
-    group, collider, theme, sun, hemi,
+    group, collider, theme, sun, hemi, envRT,
     sites: markers.siteMarkers, hills: markers.hillRings,
     bounds: { x: map.halfX, z: map.halfZ },
   };

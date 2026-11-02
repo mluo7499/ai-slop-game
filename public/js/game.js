@@ -1,6 +1,6 @@
 // First-person renderer, input, weapon feedback and remote-player animation.
 import * as THREE from 'three';
-import { WEAPONS, BTN, TEAM_INFO, DEG, eyeHeight, clamp, PHYS } from '/shared/constants.js';
+import { WEAPONS, BTN, TEAM_INFO, DEG, eyeHeight, clamp, computeLook, PHYS } from '/shared/constants.js';
 import { BODY_SKINS, TRACERS } from '/shared/shop.js';
 import { buildWorld } from './world.js';
 import { buildViewModel } from './weapons.js';
@@ -311,6 +311,9 @@ export class Game {
     this.lastPhase = null;
     this.stepDist = 0;
     this.lastAlive = true;
+    this.landDip = 0;
+    this.lastFall = 0;
+    this.wasGround = true;
     this.deathFrom = '';
     this.resultsShown = false;
     this.matchEnded = false;
@@ -347,13 +350,9 @@ export class Game {
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('mousemove', (e) => {
       if (document.pointerLockElement !== this.canvas || !this.active) return;
-      const sens = (this.settings.sensitivity || 1) * 0.0019 * (this.scoped ? 0.55 : 1);
-      this.yaw -= e.movementX * sens;
-      this.pitch = clamp(this.pitch - e.movementY * sens, -89, 89);
-      if (this.yaw > Math.PI) this.yaw -= Math.PI * 2;
-      if (this.yaw < -Math.PI) this.yaw += Math.PI * 2;
-      this.lookX = (this.lookX || 0) + e.movementX;
-      this.lookY = (this.lookY || 0) + e.movementY;
+      const dx = Number.isFinite(e.movementX) ? e.movementX : (Number(e.webkitMovementX) || 0);
+      const dy = Number.isFinite(e.movementY) ? e.movementY : (Number(e.webkitMovementY) || 0);
+      this.applyLook(dx, dy);
     });
     document.addEventListener('mousedown', (e) => {
       if (e.button === 0 && this.active && document.pointerLockElement === this.canvas) this.fireQueued = true;
@@ -383,11 +382,22 @@ export class Game {
   requestLock() {
     if (document.pointerLockElement === this.canvas) return;
     try {
-      const out = this.canvas.requestPointerLock({ unadjustedMovement: true });
-      if (out?.catch) out.catch(() => this.canvas.requestPointerLock());
-    } catch {
-      this.canvas.requestPointerLock();
-    }
+      // Plain pointer lock. Requesting `unadjustedMovement` can silently return
+      // zero vertical deltas on some macOS/Chromium setups, leaving mouse look
+      // locked to yaw only.
+      const out = this.canvas.requestPointerLock();
+      if (out?.catch) out.catch(() => {});
+    } catch { /* pointerlockerror handler can recover on the next click */ }
+  }
+
+  /** Apply one pointer-lock delta. Pitch is clamped to CS-style +/-89 degrees. */
+  applyLook(dx, dy) {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+    const next = computeLook(this.yaw, this.pitch, dx, dy, this.settings.sensitivity, this.scoped);
+    this.yaw = next.yaw;
+    this.pitch = next.pitch;
+    this.lookX = (this.lookX || 0) + dx;
+    this.lookY = (this.lookY || 0) + dy;
   }
 
   releaseLock() {
@@ -424,8 +434,9 @@ export class Game {
     this.net.enterRoom(joinData);
     const quality = this.settings.quality || 'high';
     this.renderer.shadowMap.enabled = quality === 'high' && this.settings.shadows !== false;
-    this.world = buildWorld(mapData, quality);
+    this.world = buildWorld(mapData, quality, this.renderer);
     this.scene.add(this.world.group);
+    this.scene.environment = this.world.envRT ? this.world.envRT.texture : null;
     this.scene.fog = new THREE.Fog(
       new THREE.Color(this.world.theme.fog || '#1b2432'),
       this.world.theme.fogNear ?? 30,
@@ -439,6 +450,9 @@ export class Game {
     this.lastPhase = null;
     this.resultsShown = false;
     this.matchEnded = false;
+    this.landDip = 0;
+    this.lastFall = 0;
+    this.wasGround = true;
     this.scoped = false;
     this.hud?.setScope(false);
     this.scopeT = 0;
@@ -457,6 +471,8 @@ export class Game {
       this.world.group.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
       });
+      this.scene.environment = null;
+      this.world.envRT?.dispose();
       this.world = null;
       this.scene.fog = null;
     }
@@ -808,7 +824,14 @@ export class Game {
     const shakeX = (Math.random() - 0.5) * this.shake * 0.05;
     const shakeY = (Math.random() - 0.5) * this.shake * 0.05;
     const px = local.pos[0] + net.correction[0];
-    const py = local.pos[1] + eye + bob + net.correction[1];
+    // landing dip: compress the view by the speed we hit the floor with
+    if (local.onGround && !this.wasGround && (this.lastFall || 0) > 3) {
+      this.landDip = Math.min(0.24, this.lastFall * 0.014);
+    }
+    this.lastFall = local.onGround ? 0 : Math.max(this.lastFall || 0, -(local.vel[1] || 0));
+    this.wasGround = local.onGround;
+    this.landDip = Math.max(0, (this.landDip || 0) - dt * 0.7);
+    const py = local.pos[1] + eye + bob - (this.landDip || 0) + net.correction[1];
     const pz = local.pos[2] + net.correction[2];
     this.camera.position.set(px + shakeX, py + shakeY, pz);
     this.camera.rotation.set(
