@@ -855,7 +855,7 @@ table.rooms td small { display: block; margin-top: 2px; font-family: var(--mono)
   .hero h2 { font-size: 46px; }
 }
 @media (max-width: 760px) {
-  .rail { position: absolute; inset: 0 0 auto 0; width: auto; flex-direction: row; align-items: center; gap: 14px; padding: 11px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .rail { position: absolute; z-index: 3; inset: 0 0 auto 0; width: auto; flex-direction: row; align-items: center; gap: 14px; padding: 11px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { padding: 0; border: 0; flex: 0 0 auto; }
   .brand h1 { font-size: 20px; }
   .brand-sub { display: none; }
