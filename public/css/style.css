@@ -875,6 +875,26 @@ table.rooms td small { display: block; margin-top: 2px; font-family: var(--mono)
   .editor-tools { display: none; }
   .editor-view { grid-column: 1; }
   .editor-title input { width: 150px; }
+  .panel-head { flex-direction: column; align-items: stretch; gap: 14px; }
+  .panel-head .balance { text-align: left; }
+  .panel-head > .primary, .panel-head > .ghost { align-self: stretch; text-align: center; }
+}
+
+@media (max-width: 560px) {
+  .rail { flex-wrap: wrap; gap: 10px 14px; }
+  .rail .railnav {
+    order: 2; flex: 0 0 100%; display: grid; grid-template-columns: repeat(5, 1fr);
+    overflow: visible; border-top: 1px solid var(--line);
+  }
+  .railbtn {
+    justify-content: center; gap: 0; padding: 9px 4px;
+    border-right: 1px solid var(--line); border-left: 0;
+    font-size: 8px; letter-spacing: .06em;
+  }
+  .railbtn:last-child { border-right: 0; }
+  .railbtn span { display: none; }
+  .stage { padding-top: 118px; }
+  .split { gap: 22px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
