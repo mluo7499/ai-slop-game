@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 export const UPSCALE_PRESETS = {
   native: { label: 'NATIVE (NO UPSCALE)', scale: 1.0, sharpen: 0.0, aa: 0.0 },
-  quality: { label: 'QUALITY (DLSS-STYLE)', scale: 0.88, sharpen: 0.32, aa: 1.0 },
+  quality: { label: 'QUALITY', scale: 0.88, sharpen: 0.32, aa: 1.0 },
   balanced: { label: 'BALANCED', scale: 0.78, sharpen: 0.42, aa: 1.0 },
   performance: { label: 'PERFORMANCE', scale: 0.66, sharpen: 0.55, aa: 1.2 },
   ultra: { label: 'ULTRA PERFORMANCE', scale: 0.53, sharpen: 0.7, aa: 1.3 },
@@ -163,7 +163,7 @@ export class Upscaler {
     return {
       preset: this.preset,
       scale: this.enabled ? this.scale : 1,
-      label: this.enabled ? `${Math.round(this.scale * 100)}% · ${UPSCALE_PRESETS[this.preset].label}` : UPSCALE_PRESETS.native.label,
+      label: this.enabled ? `${Math.round(this.scale * 100)}% / ${UPSCALE_PRESETS[this.preset].label}` : UPSCALE_PRESETS.native.label,
     };
   }
 }

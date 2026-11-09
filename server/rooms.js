@@ -160,7 +160,7 @@ export class RoomManager {
       mode: mode || 'tdm',
       mapId: BUILTIN_MAPS[Math.floor(Math.random() * BUILTIN_MAPS.length)].id,
       bots: 4, isPublic: true, maxPlayers: 12,
-      name: `${MODE_DEFS[mode || 'tdm'].short} · QUICKPLAY`,
+      name: `${MODE_DEFS[mode || 'tdm'].short} / QUICKPLAY`,
     });
   }
 

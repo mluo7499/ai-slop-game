@@ -25,7 +25,7 @@ export class Room {
     this.mode = MODE_DEFS[this.modeId];
     this.map = opts.map;
     this.world = makeWorld(this.map.blocks);
-    this.name = String(opts.name || `${this.mode.short} · ${this.map.name}`).slice(0, 34);
+    this.name = String(opts.name || `${this.mode.short} / ${this.map.name}`).slice(0, 34);
     this.isPublic = opts.isPublic !== false;
     this.password = String(opts.password || '').slice(0, 24);
     this.maxPlayers = clamp(Number(opts.maxPlayers) || 12, 2, 16);

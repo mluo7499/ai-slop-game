@@ -83,7 +83,7 @@ function slopyard() {
     spawns.push({ x: -10 + i * 4, y: 0, z: -33, team: 1 });
   }
   return {
-    id: 'slopyard', name: 'SLOPYARD', tagline: 'Neon freight terminal · balanced three-lane',
+    id: 'slopyard', name: 'SLOPYARD', tagline: 'Neon freight terminal / balanced three-lane',
     halfX: half, halfZ: half, blocks, spawns,
     sites: [{ x: -18, z: -24, r: 5.5, label: 'A' }, { x: 18, z: 24, r: 5.5, label: 'B' }],
     hills: [{ x: 0, z: 0, r: 7, label: 'DECK' }, { x: -26, z: 12, r: 6, label: 'WEST' }, { x: 26, z: -12, r: 6, label: 'EAST' }],
@@ -144,7 +144,7 @@ function neonDistrict() {
     spawns.push({ x: -12 + i * 4, y: 0, z: -26, team: 1 });
   }
   return {
-    id: 'neondistrict', name: 'NEON DISTRICT', tagline: 'Rain-slick blocks · vertical mid control',
+    id: 'neondistrict', name: 'NEON DISTRICT', tagline: 'Rain-slick blocks / vertical mid control',
     halfX: half, halfZ: half, blocks, spawns,
     sites: [{ x: -18, z: -16, r: 5.5, label: 'A' }, { x: 18, z: 16, r: 5.5, label: 'B' }],
     hills: [{ x: 0, z: 0, r: 6.5, label: 'MID' }, { x: 0, z: 19, r: 5.5, label: 'CATWALK' }, { x: -18, z: 16, r: 5.5, label: 'B' }],
@@ -196,7 +196,7 @@ function frostline() {
     spawns.push({ x: -38, y: 0, z: -12 + i * 4, team: 1 });
   }
   return {
-    id: 'frostline', name: 'FROSTLINE', tagline: 'High-altitude relay · long-range duels',
+    id: 'frostline', name: 'FROSTLINE', tagline: 'High-altitude relay / long-range duels',
     halfX, halfZ, blocks, spawns,
     sites: [{ x: -28, z: -22, r: 6, label: 'A' }, { x: 28, z: 22, r: 6, label: 'B' }],
     hills: [{ x: 0, z: 0, r: 7, label: 'BUNKER' }, { x: 0, z: -22, r: 5.5, label: 'SNOWLINE' }, { x: 0, z: 22, r: 5.5, label: 'RELAY' }],
@@ -243,7 +243,7 @@ function cargohold() {
     spawns.push({ x: -10 + i * 4, y: 0, z: -23, team: 1 });
   }
   return {
-    id: 'cargohold', name: 'CARGOHOLD', tagline: 'Stacked steel · close-quarters chaos',
+    id: 'cargohold', name: 'CARGOHOLD', tagline: 'Stacked steel / close-quarters chaos',
     halfX: half, halfZ: half, blocks, spawns,
     sites: [{ x: -16, z: -16, r: 5.5, label: 'A' }, { x: 16, z: 16, r: 5.5, label: 'B' }],
     hills: [{ x: 0, z: 0, r: 6, label: 'CENTER' }, { x: -18, z: 18, r: 5.5, label: 'A' }, { x: 18, z: -18, r: 5.5, label: 'B' }],

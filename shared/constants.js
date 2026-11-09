@@ -134,33 +134,33 @@ export const MODE_DEFS = {
     id: 'tdm', name: 'TEAM DEATHMATCH', short: 'TDM', teamBased: true,
     respawn: true, scoreLimit: 75, timeLimit: 900, respawnDelay: 3.2, warmup: 5,
     desc: 'Two squads, one scoreline. First team to 75 frags takes it.',
-    buyTime: 999, icon: '◈',
+    buyTime: 999,
   },
   ffa: {
     id: 'ffa', name: 'FREE FOR ALL', short: 'FFA', teamBased: false,
     respawn: true, scoreLimit: 35, timeLimit: 720, respawnDelay: 2.6, warmup: 5,
     desc: 'No allies. No mercy. First to 35 kills wins.',
-    buyTime: 999, icon: '✳',
+    buyTime: 999,
   },
   bomb: {
     id: 'bomb', name: 'BOMB DEFUSAL', short: 'BOMB', teamBased: true,
     respawn: false, scoreLimit: 8, roundTime: 115, freezeTime: 7, warmup: 4,
     plantTime: 3.2, bombTime: 40, defuseTime: 7, halftimeAt: 4,
     desc: 'Plant the spike or stop the plant. First to 8 rounds, roles swap at half.',
-    buyTime: 12, icon: '◉', roundBased: true,
+    buyTime: 12, roundBased: true,
   },
   gungame: {
     id: 'gungame', name: 'GUN GAME', short: 'GUN', teamBased: false,
     respawn: true, scoreLimit: 11, timeLimit: 900, respawnDelay: 1.6, warmup: 4,
     desc: 'Every frag upgrades your gun. Finish the ladder with a knife kill to win.',
-    buyTime: 0, icon: '⬆',
+    buyTime: 0,
   },
   koth: {
     id: 'koth', name: 'KING OF THE HILL', short: 'KOTH', teamBased: true,
     respawn: true, scoreLimit: 250, timeLimit: 720, respawnDelay: 3.0, warmup: 5,
     hillRadius: 7.5, hillScorePerSec: 5, hillRotateTime: 45, hillCount: 3,
     desc: 'Hold the zone to bleed the enemy score. The hill relocates every 45s.',
-    buyTime: 999, icon: '▲',
+    buyTime: 999,
   },
 };
 

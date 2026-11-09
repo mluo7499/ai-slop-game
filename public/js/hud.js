@@ -70,9 +70,9 @@ export class Hud {
     this.mapData = mapData;
     this.reset();
     const label = $('radar-label');
-    label.textContent = `${mapData.name} · ${MODE_DEFS[roomInfo.mode]?.short || roomInfo.mode.toUpperCase()}`;
-    $('sb-title').textContent = `${mapData.name} — ${MODE_DEFS[roomInfo.mode]?.name || roomInfo.mode}`;
-    $('sb-sub').textContent = roomInfo.isPublic ? 'PUBLIC ROOM' : `PRIVATE · ${roomInfo.code}`;
+    label.textContent = `${mapData.name} / ${MODE_DEFS[roomInfo.mode]?.short || roomInfo.mode.toUpperCase()}`;
+    $('sb-title').textContent = `${mapData.name} / ${MODE_DEFS[roomInfo.mode]?.name || roomInfo.mode}`;
+    $('sb-sub').textContent = roomInfo.isPublic ? 'PUBLIC ROOM' : `PRIVATE / ${roomInfo.code}`;
     $('team-a-name').textContent = TEAM_INFO[0].name.toUpperCase();
     $('team-b-name').textContent = TEAM_INFO[1].name.toUpperCase();
     this.buildRadarBase(mapData);
@@ -94,9 +94,9 @@ export class Hud {
     const scale = (size - padding * 2) / Math.max(halfX * 2, halfZ * 2);
     this.radarTransform = { scale, halfX, halfZ, size };
     ctx.clearRect(0, 0, size, size);
-    ctx.fillStyle = 'rgba(7,11,17,0.86)';
+    ctx.fillStyle = 'rgba(12,14,10,0.92)';
     ctx.fillRect(0, 0, size, size);
-    ctx.strokeStyle = 'rgba(95,124,150,0.28)';
+    ctx.strokeStyle = 'rgba(139,140,123,0.22)';
     ctx.lineWidth = 1;
     for (let g = -40; g <= 40; g += 10) {
       const p = this.worldToRadar(g * 4, 0);
@@ -110,16 +110,16 @@ export class Hud {
       const w = Math.max(1.5, b.w * scale);
       const d = Math.max(1.5, b.d * scale);
       const h = clamp(b.h / 6, 0.15, 1);
-      ctx.fillStyle = `rgba(${64 + h * 46},${74 + h * 52},${88 + h * 56},0.9)`;
+      ctx.fillStyle = `rgba(${88 + h * 46},${90 + h * 42},${78 + h * 34},0.9)`;
       ctx.fillRect(p.x - w / 2, p.y - d / 2, w, d);
     }
     for (const s of map.sites || []) {
       const p = this.worldToRadar(s.x, s.z);
-      ctx.strokeStyle = 'rgba(255,154,60,0.75)';
+      ctx.strokeStyle = 'rgba(217,91,43,0.85)';
       ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(3, s.r * scale), 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,180,100,0.85)';
-      ctx.font = 'bold 9px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(217,91,43,0.95)';
+      ctx.font = 'bold 9px Consolas, monospace';
       ctx.textAlign = 'center';
       ctx.fillText(s.label || 'A', p.x, p.y + 3);
     }
@@ -145,7 +145,7 @@ export class Hud {
         <span class="bi-key">${i + 1}</span>
         <span class="bi-name">${item.label}</span>
         <span class="bi-price">${item.price ? '$' + item.price : 'FREE'}</span>
-        <span class="bi-meta">${w ? `${w.damage} DMG · ${w.rpm} RPM` : item.kind === 'armor' ? 'DAMAGE MITIGATION' : 'FRAG GRENADE'}</span>`;
+        <span class="bi-meta">${w ? `${w.damage} DMG / ${w.rpm} RPM` : item.kind === 'armor' ? 'DAMAGE MITIGATION' : 'FRAG GRENADE'}</span>`;
       btn.addEventListener('click', () => {
         this.handlers.buy?.(item.id);
       });
@@ -194,11 +194,11 @@ export class Hud {
       this.setText('hud-mag', Math.max(0, me.mag));
       this.setText('hud-reserve', me.reserve);
     }
-    this.setText('hud-grenades', `◍ ${me.grenades || 0}`);
+    this.setText('hud-grenades', `FRAG ${me.grenades || 0}`);
     this.setText('hud-role', net.room?.mode === 'bomb' ? (me.role === 'atk' ? 'ATTACK' : 'DEFEND') : '');
 
     const healthPct = clamp(me.hp / 100, 0, 1);
-    $('hud-hp').style.color = healthPct < 0.3 ? '#ff5545' : healthPct < 0.6 ? '#ffb347' : '#e8f2ff';
+    $('hud-hp').style.color = healthPct < 0.3 ? '#d4574a' : healthPct < 0.6 ? '#c6a24a' : '#ddd8c6';
     $('hud-hp').parentElement.classList.toggle('critical', healthPct < 0.3);
 
     const latest = snap;
@@ -210,7 +210,8 @@ export class Hud {
         this.setText('team-b-name', TEAM_INFO[1].name.toUpperCase());
         this.setText('score-a', latest.scores[0]);
         this.setText('score-b', latest.scores[1]);
-        $('.team-block.a')?.classList?.toggle('leading', latest.scores[0] > latest.scores[1]);
+        document.querySelector('.team-block.a')?.classList.toggle('leading', latest.scores[0] > latest.scores[1]);
+        document.querySelector('.team-block.b')?.classList.toggle('leading', latest.scores[1] > latest.scores[0]);
       } else {
         this.setText('team-a-name', 'YOUR SCORE');
         this.setText('team-b-name', 'LEADER');
@@ -225,15 +226,15 @@ export class Hud {
       this.setText('match-timer', latest.phase === 'warmup' ? Math.ceil(timeLeft) : fmtTime(timeLeft));
       $('match-timer').classList.toggle('urgent', latest.phase === 'live' && timeLeft < 20);
       this.setText('round-label', mode === 'bomb'
-        ? `ROUND ${latest.round} · FIRST TO ${latest.limit}`
+        ? `ROUND ${latest.round} / FIRST TO ${latest.limit}`
         : `FIRST TO ${latest.limit}`);
 
       const objective = $('objective-bar');
       if (latest.bomb) {
         objective.classList.remove('hidden');
-        this.setText('objective-text', `SPIKE ARMED · SITE ${latest.bomb.site} · ${Math.ceil(latest.bomb.t)}s`);
+        this.setText('objective-text', `SPIKE ARMED / SITE ${latest.bomb.site} / ${Math.ceil(latest.bomb.t)}s`);
         $('objective-fill').style.width = `${clamp((latest.bomb.t / 40) * 100, 0, 100)}%`;
-        $('objective-fill').style.background = latest.bomb.t < 10 ? '#ff4030' : '#ff9a3c';
+        $('objective-fill').style.background = latest.bomb.t < 10 ? '#d4574a' : '#d95b2b';
         if (latest.bomb.d > 0) {
           objective.classList.remove('hidden');
           this.setText('objective-text', `DEFUSING ${Math.round(latest.bomb.d / 7 * 100)}%`);
@@ -241,9 +242,9 @@ export class Hud {
       } else if (latest.hill) {
         objective.classList.remove('hidden');
         const owner = latest.hill.owner === -1 ? 'CONTESTED' : latest.hill.owner === 0 ? TEAM_INFO[0].name : latest.hill.owner === 1 ? TEAM_INFO[1].name : 'PLAYER';
-        this.setText('objective-text', `HILL ${latest.hill.label} · ${owner} · MOVES IN ${Math.ceil(latest.hill.rotate)}s`);
+        this.setText('objective-text', `HILL ${latest.hill.label} / ${owner} / MOVES IN ${Math.ceil(latest.hill.rotate)}s`);
         $('objective-fill').style.width = `${clamp((latest.hill.rotate / 45) * 100, 0, 100)}%`;
-        $('objective-fill').style.background = '#5ce1ff';
+        $('objective-fill').style.background = '#7d97a8';
       } else {
         objective.classList.add('hidden');
       }
@@ -255,7 +256,7 @@ export class Hud {
       if (mode === 'bomb' && alive) {
         if (me.role === 'atk' && !latest.bomb) {
           const site = (this.mapData.sites || []).find((s) => Math.hypot(net.local.pos[0] - s.x, net.local.pos[2] - s.z) <= s.r);
-          if (site) { promptText = `HOLD TO PLANT · SITE ${site.label}`; promptProgress = me.plantProgress; }
+          if (site) { promptText = `HOLD TO PLANT / SITE ${site.label}`; promptProgress = me.plantProgress; }
         } else if (me.role === 'def' && latest.bomb) {
           const d = Math.hypot(net.local.pos[0] - latest.bomb.x, net.local.pos[2] - latest.bomb.z);
           if (d < 2.6) { promptText = 'HOLD TO DEFUSE'; promptProgress = me.defuseProgress; }
@@ -274,7 +275,7 @@ export class Hud {
     const speed = net.local ? Math.hypot(net.local.vel[0], net.local.vel[2]) : 0;
     const gap = 5 + spread * 4 + bloom * 7 + clamp(speed / 6, 0, 1) * 4;
     document.documentElement.style.setProperty('--ch-gap', `${gap}px`);
-    document.documentElement.style.setProperty('--ch-color', this.handlers.crosshairColor?.() || '#3aff9e');
+    document.documentElement.style.setProperty('--ch-color', this.handlers.crosshairColor?.() || '#c9f24d');
 
     // death / respawn
     if (!alive) {
@@ -313,7 +314,7 @@ export class Hud {
       this.lastSbDraw = performance.now();
       this.renderScoreboard();
     }
-    this.setText('pause-ping', `${Math.round(net.rtt)} MS · ${Math.round(net.jitter)} JITTER`);
+    this.setText('pause-ping', `${Math.round(net.rtt)} MS / ${Math.round(net.jitter)} JITTER`);
   }
 
   setText(id, value) {
@@ -379,14 +380,14 @@ export class Hud {
   }
 
   showEndBanner(win, ev) {
-    this.showBanner(win ? 'MATCH WON' : 'MATCH LOST', win ? 'FLAWLESS WORK, OPERATOR' : 'REGROUP AND RUN IT BACK', 3200, win ? 'good' : 'danger');
+    this.showBanner(win ? 'MATCH WON' : 'MATCH LOST', win ? 'SITE HELD / MATCH CLOSED' : 'REGROUP / RUN IT BACK', 3200, win ? 'good' : 'danger');
     if (win) this.handlers.winSound?.(); else this.handlers.loseSound?.();
   }
 
   showDeath(killerName, weaponId, headshot) {
     $('death-screen').classList.remove('hidden');
     this.setText('death-killer', killerName || 'UNKNOWN');
-    this.setText('death-weapon', `${WEAPONS[weaponId]?.name || weaponId || 'UNKNOWN'}${headshot ? ' · HEADSHOT' : ''}`);
+    this.setText('death-weapon', `${WEAPONS[weaponId]?.name || weaponId || 'UNKNOWN'}${headshot ? ' / HEADSHOT' : ''}`);
   }
 
   hideDeath() {
@@ -405,7 +406,7 @@ export class Hud {
     if (ev.tk) row.classList.add('teamkill');
     row.innerHTML = `
       <b class="kf-k ${kTeam === 0 ? 'a' : kTeam === 1 ? 'b' : ''}">${escapeHtml(killer)}</b>
-      <span class="kf-w">${ev.hs ? '⌖' : ''} ${escapeHtml(weapon)}${ev.hs ? ' HS' : ''}</span>
+      <span class="kf-w">${ev.hs ? 'HS / ' : ''}${escapeHtml(weapon)}</span>
       <b class="kf-v ${vTeam === 0 ? 'a' : vTeam === 1 ? 'b' : ''}">${escapeHtml(victim)}</b>`;
     feed.appendChild(row);
     this.killRows.push({ el: row, at: performance.now() });
@@ -461,13 +462,13 @@ export class Hud {
     // hill / bomb
     if (snap.hill) {
       const p = this.worldToRadar(snap.hill.x, snap.hill.z);
-      ctx.strokeStyle = 'rgba(92,225,255,0.9)';
+      ctx.strokeStyle = 'rgba(125,151,168,0.9)';
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, snap.hill.r * this.radarTransform.scale, 0, Math.PI * 2); ctx.stroke();
     }
     if (snap.bomb) {
       const p = this.worldToRadar(snap.bomb.x, snap.bomb.z);
-      ctx.fillStyle = '#ff4b33';
+      ctx.fillStyle = '#c64a3f';
       ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); ctx.fill();
     }
     for (const arr of snap.players) {
@@ -480,7 +481,7 @@ export class Hud {
       const hasTeams = team >= 0 && mine >= 0;
       const isAlly = hasTeams && team === mine;
       const p = this.worldToRadar(arr[1], arr[3]);
-      ctx.fillStyle = isAlly ? (team === 0 ? '#ff6b4a' : '#4aa8ff') : '#ff4b5a';
+      ctx.fillStyle = isAlly ? (team === 0 ? '#c49a3f' : '#7d97a8') : '#d4574a';
       ctx.beginPath();
       ctx.arc(p.x, p.y, isAlly ? 2.6 : 3, 0, Math.PI * 2);
       ctx.fill();
@@ -490,7 +491,7 @@ export class Hud {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(-me[4]);
-    ctx.fillStyle = '#eaf6ff';
+    ctx.fillStyle = '#ddd8c6';
     ctx.beginPath();
     ctx.moveTo(0, -6);
     ctx.lineTo(4.5, 5);
@@ -507,7 +508,7 @@ export class Hud {
   toggleBuy(force) {
     const next = force === undefined ? !this.buyOpen : !!force;
     if (next && !this.net?.me?.canBuy) {
-      this.addSystem('Buy zone closed — return to spawn or wait for freeze time.');
+      this.addSystem('Buy zone closed. Return to spawn or wait for freeze time.');
       return;
     }
     this.buyOpen = next;
@@ -524,7 +525,7 @@ export class Hud {
   togglePause(force) {
     $('pause-menu').classList.toggle('hidden', force === false);
     const room = this.roomInfo;
-    if (room) this.setText('pause-room', `${room.name} · ${MODE_DEFS[room.mode]?.short || room.mode}`);
+    if (room)    this.setText('pause-room', `${room.name} / ${MODE_DEFS[room.mode]?.short || room.mode}`);
   }
 
   renderScoreboard() {
@@ -565,9 +566,9 @@ export class Hud {
     const sorted = [...roster].sort((a, b) => b.score - a.score);
     $('res-title').textContent = win ? 'VICTORY' : teamBased ? 'DEFEAT' : 'MATCH OVER';
     $('res-title').className = win ? 'win' : 'lose';
-    $('res-kicker').textContent = `${MODE_DEFS[this.roomInfo?.mode]?.name || 'MATCH'} · ${this.mapData?.name || ''}`;
+    $('res-kicker').textContent = `${MODE_DEFS[this.roomInfo?.mode]?.name || 'MATCH'} / ${this.mapData?.name || ''}`;
     $('res-score').textContent = teamBased
-      ? `${latest.scores[0]} — ${latest.scores[1]}`
+      ? `${latest.scores[0]} / ${latest.scores[1]}`
       : `${me.score} PTS`;
     $('res-kills').textContent = me.kills ?? 0;
     $('res-deaths').textContent = me.deaths ?? 0;

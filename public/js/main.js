@@ -18,7 +18,7 @@ const $$ = (sel) => [...document.querySelectorAll(sel)];
 const DEFAULT_PREFS = {
   name: 'Recruit', sensitivity: 1, fov: 78, quality: 'high',
   upscale: 'quality', dynamicRes: true, volume: 0.65,
-  crosshair: '#3aff9e', shadows: true, radar: true,
+  crosshair: '#c9f24d', shadows: true, radar: true,
 };
 
 const loadPrefs = () => {
@@ -136,12 +136,12 @@ async function boot() {
   fillStaticUI();
   try {
     profile = await net.connect();
-    setConn('ONLINE · AUTHORITATIVE SERVER');
+    setConn('ONLINE / AUTHORITATIVE SERVER');
     onProfile({ profile });
     net.refreshRooms();
     switchTab('play', 'quick');
   } catch (err) {
-    setConn('OFFLINE — IS THE SERVER RUNNING?', false);
+    setConn('OFFLINE / IS THE SERVER RUNNING?', false);
     toast(err.message || 'Could not connect to server', 'bad');
   }
   setTimeout(() => $('boot').classList.add('done'), 450);
@@ -152,22 +152,21 @@ function fillStaticUI() {
   const heroModes = $('hero-modes');
   const modeSelect = $('cr-mode');
   modeSelect.innerHTML = '';
-  const icons = { tdm: '◈', ffa: '✳', bomb: '◉', gungame: '⬆', koth: '▲' };
-  const iconClass = { tdm: '', ffa: 'green', bomb: 'pink', gungame: 'gold', koth: 'cyan' };
-  Object.values(MODE_DEFS).forEach((mode) => {
+  Object.values(MODE_DEFS).forEach((mode, i) => {
+    const index = String(i + 1).padStart(2, '0');
     const card = document.createElement('button');
     card.className = 'mode-card';
     card.dataset.mode = mode.id;
     card.innerHTML = `
-      <span class="mc-icon ${iconClass[mode.id] || ''}">${icons[mode.id] || '◈'}</span>
+      <span class="mc-index">${index}</span>
       <b>${mode.name}</b>
       <p>${mode.desc}</p>
-      <span class="mc-meta">${mode.teamBased ? 'TEAM' : 'SOLO'} · ${mode.respawn ? 'RESPAWN' : 'ROUNDS'}</span>
-      <i class="mc-play">QUICKPLAY →</i>`;
+      <span class="mc-meta">${mode.teamBased ? 'TEAM' : 'SOLO'} / ${mode.respawn ? 'RESPAWN' : 'ROUNDS'}</span>
+      <i class="mc-play">DEPLOY</i>`;
     card.addEventListener('click', () => playMode(mode.id));
     modeGrid.appendChild(card);
     const chip = document.createElement('span');
-    chip.textContent = mode.name;
+    chip.innerHTML = `<b>${index}</b>${mode.name}`;
     heroModes.appendChild(chip);
     const opt = document.createElement('option');
     opt.value = mode.id;
@@ -243,10 +242,10 @@ function fillStaticUI() {
   upscale.value = settings.upscale;
   upscale.addEventListener('change', () => {
     settings.upscale = upscale.value;
-    $('st-upscale-v').textContent = upscale.selectedOptions[0].textContent.split(' — ')[0];
+    $('st-upscale-v').textContent = upscale.selectedOptions[0].textContent.split(' / ')[0];
     game.applySettings(settings); savePrefs();
   });
-  $('st-upscale-v').textContent = upscale.selectedOptions[0].textContent.split(' — ')[0];
+  $('st-upscale-v').textContent = upscale.selectedOptions[0].textContent.split(' / ')[0];
   $('st-dynamic').checked = settings.dynamicRes !== false;
   $('st-dynamic').addEventListener('change', (e) => { settings.dynamicRes = e.target.checked; game.applySettings(settings); savePrefs(); });
   $('st-shadows').checked = settings.shadows !== false;
@@ -294,7 +293,7 @@ function fillStaticUI() {
   });
   $('btn-open-editor').addEventListener('click', () => openEditor());
   $('btn-help').addEventListener('click', () => {
-    hud.addSystem('WASD move · Space jump · Shift walk · Ctrl crouch · LMB fire · RMB scope · R reload · E use · G grenade · B buy · Tab scores · T chat');
+    hud.addSystem('WASD move / Space jump / Shift walk / Ctrl crouch / LMB fire / RMB scope / R reload / E use / G grenade / B buy / Tab scores / T chat');
     toast('Controls printed to the match log.');
   });
 
@@ -318,7 +317,7 @@ function fillStaticUI() {
   // game overlays
   $('btn-resume').addEventListener('click', resumeMatch);
   $('btn-leave-match').addEventListener('click', leaveMatch);
-  $('btn-pause-settings').addEventListener('click', () => { toast('Settings are in the main menu — leave the match to change them.'); });
+  $('btn-pause-settings').addEventListener('click', () => { toast('Settings are in the main menu. Leave the match to change them.'); });
   $('btn-res-leave').addEventListener('click', leaveMatch);
   $('btn-res-rematch').addEventListener('click', () => {
     const myToken = localStorage.getItem('slopstrike.token');
@@ -366,7 +365,7 @@ function onProfile(msg) {
   const kd = profile.deaths ? (profile.kills / profile.deaths) : profile.kills;
   $('menu-kd').textContent = kd.toFixed(2);
   $('menu-xp-fill').style.width = `${Math.min(100, (lvl.into / lvl.need) * 100)}%`;
-  $('menu-xp-text').textContent = `${lvl.into} / ${lvl.need} XP · LEVEL ${lvl.level}`;
+  $('menu-xp-text').textContent = `${lvl.into} / ${lvl.need} XP / LEVEL ${lvl.level}`;
   if (msg.rooms) rooms = msg.rooms;
   if (msg.maps) setMaps(msg.maps);
   renderRooms();
@@ -383,7 +382,7 @@ function setMaps(list) {
   for (const m of maps) {
     const opt = document.createElement('option');
     opt.value = m.id;
-    opt.textContent = `${m.name}${m.custom ? ' · CUSTOM' : ''}`;
+    opt.textContent = `${m.name}${m.custom ? ' / CUSTOM' : ''}`;
     select.appendChild(opt);
   }
   if (current) select.value = current;
@@ -430,7 +429,7 @@ function testMap(map) {
   toast('Launching MapLAB playtest…');
   net.create({
     mode: 'tdm', customMap: map, bots: 4, maxPlayers: 12,
-    isPublic: false, name: `TEST · ${map.name}`, settings: { maxBots: 4 },
+    isPublic: false, name: `TEST / ${map.name}`, settings: { maxBots: 4 },
   });
 }
 
@@ -442,7 +441,7 @@ function renderRooms() {
   const body = $('room-list');
   $('room-count').textContent = `${rooms.length} ROOM${rooms.length === 1 ? '' : 'S'} ONLINE`;
   if (!rooms.length) {
-    body.innerHTML = '<tr><td colspan="6" class="muted pad">NO PUBLIC ROOMS — CREATE ONE OR HIT QUICKPLAY</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="muted pad">NO PUBLIC ROOMS. START ONE OR USE DEPLOY.</td></tr>';
     return;
   }
   body.innerHTML = '';
@@ -451,7 +450,7 @@ function renderRooms() {
     const stateClass = room.phase === 'ended' ? 'ended' : room.phase === 'live' ? 'playing' : '';
     const phase = { warmup: 'WARMUP', freeze: 'BUY', live: 'LIVE', roundEnd: 'ROUND END', ended: 'ENDED' }[room.phase] || room.phase;
     tr.innerHTML = `
-      <td><b>${escapeHtml(room.name)}</b><small>${room.code}${room.hasPassword ? ' · LOCKED' : ''}</small></td>
+      <td><b>${escapeHtml(room.name)}</b><small>${room.code}${room.hasPassword ? ' / LOCKED' : ''}</small></td>
       <td><span class="room-mode">${MODE_DEFS[room.mode]?.short || room.mode}</span></td>
       <td>${escapeHtml(room.map)}</td>
       <td>${room.players}/${room.maxPlayers}${room.bots ? ` <span class="muted small">+${room.bots} AI</span>` : ''}</td>
@@ -487,14 +486,16 @@ function renderShop() {
     const card = document.createElement('article');
     card.className = `shop-card${equipped ? ' equipped' : ''}`;
     const rar = RARITY[item.rarity] || RARITY.common;
-    let swatchBg;
-    if (item.kind === 'finish') swatchBg = `linear-gradient(120deg, ${item.a}, ${item.b})`;
-    else if (item.kind === 'body') swatchBg = `linear-gradient(120deg, ${item.body}, ${item.legs})`;
-    else swatchBg = `linear-gradient(120deg, #0d1218, ${item.color})`;
+    const swatchA = item.a || item.body || item.color || '#3a3f33';
+    const swatchB = item.b || item.accent || item.legs || '#171a13';
+    card.style.setProperty('--sw-a', swatchA);
+    card.style.setProperty('--sw-b', swatchB);
     const price = owned ? (equipped ? 'EQUIPPED' : 'OWNED') : `${item.price} CR`;
+    const type = item.kind === 'finish' ? 'WEAPON FINISH' : item.kind === 'body' ? 'OPERATOR SKIN' : 'TRACER';
     card.innerHTML = `
-      <div class="sc-swatch" style="background:${swatchBg}">
-        <div class="sc-weapon" style="background:linear-gradient(120deg, ${item.a || item.body || item.color}, ${item.b || item.accent || '#0d1218'})"></div>
+      <div class="sc-swatch">
+        <span class="sc-plate" aria-hidden="true"></span>
+        <span class="sc-type">${type}</span>
       </div>
       <div class="sc-info">
         <span class="sc-rar ${item.rarity}">${rar.name}</span>
@@ -509,7 +510,7 @@ function renderShop() {
     btn.addEventListener('click', () => {
       audio.init();
       if (!owned) {
-        if (profile.coins < item.price) return toast('Not enough credits — frag more.', 'bad');
+        if (profile.coins < item.price) return toast('Not enough credits. Frag more.', 'bad');
         net.purchase(item.kind, item.id);
       } else if (!equipped) {
         net.equip(item.kind, item.id);
@@ -556,7 +557,7 @@ function renderLoadoutPreview() {
   const desc = {
     ak: 'Reliable, hard-hitting, unforgiving. The VK-47 rewards disciplined bursts and punishes spray.',
     m4: 'Faster follow-up shots and a tighter cone. The Warden is the surgeon\'s pick.',
-    awp: 'One shot, one kill — if you can afford the credit and the whiff. Scoped movement is slow.',
+    awp: 'One shot, one kill, if you can afford the credit and the whiff. Scoped movement is slow.',
     mp9: 'High rate, low cost. Wins close angles and eco rounds with volume of fire.',
     breacher: 'Eight pellets, brutal at close range, useless across the yard.',
   };
@@ -565,8 +566,8 @@ function renderLoadoutPreview() {
   $('lp-rate').style.width = `${clamp(w.rpm / 9, 8, 100)}%`;
   $('lp-ctrl').style.width = `${clamp(100 - w.recoil * 18, 8, 100)}%`;
   const finish = FINISHES.find((f) => f.id === $('ld-finish-primary').value) || FINISHES[0];
-  const bodyEl = document.querySelector('.lp-gun-body');
-  if (bodyEl) bodyEl.style.background = `linear-gradient(100deg, ${finish.a}, ${finish.b})`;
+  const strip = document.querySelector('.lp-finish-strip');
+  if (strip) strip.style.background = `linear-gradient(90deg, ${finish.a} 0 64%, ${finish.b} 64% 100%)`;
 }
 
 function saveLoadout() {
@@ -594,11 +595,12 @@ function renderMaps() {
   for (const m of BUILTIN_MAPS) {
     const row = document.createElement('div');
     row.className = 'map-item';
-    row.innerHTML = `<div class="map-thumb"></div><div style="flex:1"><h5>${m.name}</h5><p>${m.tagline}</p></div><button class="ghost small">PLAY</button>`;
+    const code = m.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
+    row.innerHTML = `<div class="map-thumb"><span class="map-code">${code}</span></div><div class="map-copy"><h5>${m.name}</h5><p>${m.tagline}</p></div><button class="ghost small">PLAY</button>`;
     row.querySelector('button').addEventListener('click', () => {
       pendingMapSetup = null;
-      net.create({ mode: 'tdm', mapId: m.id, bots: 4, maxPlayers: 12, isPublic: false, name: `${m.name} · SKIRMISH` });
-      toast('Spinning up skirmish…');
+      net.create({ mode: 'tdm', mapId: m.id, bots: 4, maxPlayers: 12, isPublic: false, name: `${m.name} / SKIRMISH` });
+      toast('Starting skirmish…');
     });
     builtin.appendChild(row);
   }
@@ -612,10 +614,11 @@ function renderMaps() {
   for (const m of list) {
     const row = document.createElement('div');
     row.className = 'map-item';
-    row.innerHTML = `<div class="map-thumb"></div><div style="flex:1"><h5>${escapeHtml(m.name)}</h5><p>${escapeHtml(m.tagline || 'Player-built arena')}</p></div><button class="ghost small">HOST</button>`;
+    const code = String(m.name || 'CM').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || 'CM';
+    row.innerHTML = `<div class="map-thumb"><span class="map-code">${code}</span></div><div class="map-copy"><h5>${escapeHtml(m.name)}</h5><p>${escapeHtml(m.tagline || 'Player-built arena')}</p></div><button class="ghost small">HOST</button>`;
     row.querySelector('button').addEventListener('click', () => {
-      net.create({ mode: 'tdm', mapId: m.id, bots: 4, maxPlayers: 12, isPublic: false, name: `${m.name} · SKIRMISH` });
-      toast('Spinning up skirmish…');
+      net.create({ mode: 'tdm', mapId: m.id, bots: 4, maxPlayers: 12, isPublic: false, name: `${m.name} / SKIRMISH` });
+      toast('Starting skirmish…');
     });
     custom.appendChild(row);
   }
@@ -636,10 +639,10 @@ function startMatch(msg) {
   uiBlocking = false;
   wasLocked = false;
   game.lockAllowed = true;
-  setConn('IN MATCH · AUTHORITATIVE 60HZ');
+  setConn('IN MATCH / AUTHORITATIVE 60HZ');
   game.applySettings(settings);
   const mode = MODE_DEFS[msg.room.mode];
-  hud.showBanner(mode?.name || 'MATCH', `${msg.map.name} · ${msg.room.isPublic ? 'PUBLIC' : 'PRIVATE'} · CLICK TO LOCK MOUSE`, 3200, 'neutral');
+  hud.showBanner(mode?.name || 'MATCH', `${msg.map.name} / ${msg.room.isPublic ? 'PUBLIC' : 'PRIVATE'} / CLICK TO LOCK MOUSE`, 3200, 'neutral');
   setTimeout(() => { if (game.active) game.requestLock(); }, 350);
 }
 
@@ -657,7 +660,7 @@ function leaveMatch() {
   hud.hideResults();
   hud.reset();
   switchScreen('menu');
-  setConn('ONLINE · AUTHORITATIVE SERVER');
+  setConn('ONLINE / AUTHORITATIVE SERVER');
   net.refreshRooms();
   switchTab('play', 'browse');
 }
@@ -725,7 +728,7 @@ net.on('snapshot', (msg) => {
 });
 net.on('chat', (msg) => hud.addChat(msg));
 net.on('sys', (msg) => hud.addSystem(msg.text));
-net.on('error', (msg) => { toast(msg.msg || 'Server error', 'bad'); if (!game.active) setConn('ONLINE · AUTHORITATIVE SERVER'); });
+net.on('error', (msg) => { toast(msg.msg || 'Server error', 'bad'); if (!game.active) setConn('ONLINE / AUTHORITATIVE SERVER'); });
 net.on('rooms', (list) => { rooms = list; renderRooms(); });
 net.on('mapSaved', (msg) => {
   toast('Map published to the community list', 'good');

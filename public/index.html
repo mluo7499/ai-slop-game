@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<meta name="theme-color" content="#06090e" />
-<title>SLOPSTRIKE — tactical browser FPS</title>
+<meta name="theme-color" content="#0b0d09" />
+<title>SLOPSTRIKE / Browser Tactical FPS</title>
 <link rel="stylesheet" href="/css/style.css" />
 <script type="importmap">
 { "imports": { "three": "/vendor/three.module.js" } }
@@ -16,37 +16,39 @@
   <!-- ============================================================ MENU -->
   <section id="screen-menu" class="screen active">
     <div class="menu-fx" aria-hidden="true">
-      <div class="fx-grid"></div><div class="fx-glow a"></div><div class="fx-glow b"></div><div class="fx-scan"></div>
+      <div class="fx-mark">S//</div>
+      <div class="fx-caption">FIELD MANUAL / ISSUE 01</div>
+      <div class="fx-stripe"></div>
     </div>
 
     <aside class="rail">
       <div class="brand">
         <div class="brand-mark">S//</div>
         <h1>SLOP<span>STRIKE</span></h1>
-        <div class="brand-sub">NETCODE&nbsp;5 · BROWSER TACTICAL FPS</div>
+        <div class="brand-sub">BROWSER TACTICAL FPS / BUILD 1.0</div>
       </div>
       <nav class="railnav">
         <button class="railbtn active" data-tab="play"><span>01</span>PLAY</button>
-        <button class="railbtn" data-tab="shop"><span>02</span>SHOP</button>
-        <button class="railbtn" data-tab="loadout"><span>03</span>LOADOUT</button>
-        <button class="railbtn" data-tab="maps"><span>04</span>MAPS</button>
-        <button class="railbtn" data-tab="settings"><span>05</span>SETTINGS</button>
+        <button class="railbtn" data-tab="shop"><span>02</span>ARMORY</button>
+        <button class="railbtn" data-tab="loadout"><span>03</span>KIT</button>
+        <button class="railbtn" data-tab="maps"><span>04</span>MAPLAB</button>
+        <button class="railbtn" data-tab="settings"><span>05</span>CONFIG</button>
       </nav>
       <div class="railfoot">
         <div class="profile-card">
-          <div class="pc-top"><span>OPERATOR</span><b id="menu-name">Recruit</b></div>
+          <div class="pc-top"><span>SERVICE RECORD</span><b id="menu-name">Recruit</b></div>
           <div class="pc-xp"><div class="bar"><i id="menu-xp-fill" style="width:0%"></i></div><span id="menu-xp-text">0 / 120 XP</span></div>
           <div class="pc-stats">
             <div><span>LEVEL</span><b id="menu-level">1</b></div>
             <div><span>CREDITS</span><b id="menu-coins">900</b></div>
             <div><span>K/D</span><b id="menu-kd">0.00</b></div>
           </div>
-          <button class="ghost small" id="btn-rename">CHANGE CALLSIGN</button>
+          <button class="ghost small" id="btn-rename">EDIT CALLSIGN</button>
         </div>
         <div class="rail-note">
           <span class="dot"></span><span id="conn-state">CONNECTING…</span>
         </div>
-        <button class="ghost tiny" id="btn-help">CONTROLS &amp; CREDITS</button>
+        <button class="ghost tiny" id="btn-help">CONTROLS</button>
       </div>
     </aside>
 
@@ -54,19 +56,29 @@
       <!-- PLAY -->
       <div class="panel active" data-panel="play">
         <div class="hero">
-          <div class="hero-kicker"><span class="dot"></span> LIVE · AUTHORITATIVE 60HZ · LAG COMPENSATED</div>
-          <h2>TAKE THE <em>YARD.</em></h2>
-          <p>Five gamemodes. Server-authoritative hit registration. Build your own arena. Zero downloads, zero installs — just click and frag.</p>
-          <div class="hero-actions">
-            <button class="primary big" id="btn-quickplay">QUICKPLAY <span>→</span></button>
-            <button class="ghost big" data-goto="create">CREATE ROOM</button>
+          <div class="hero-copy">
+            <div class="hero-kicker"><span class="dot"></span> OPERATIONS / LIVE</div>
+            <h2>A TACTICAL FPS <em>IN A TAB.</em></h2>
+            <p>Five modes, 60 Hz authoritative servers and a map editor. No install, no launcher, no storefront. Pick a mode, take a site, hold it.</p>
+            <div class="hero-actions">
+              <button class="primary big" id="btn-quickplay">DEPLOY</button>
+              <button class="ghost big" data-goto="create">CREATE ROOM</button>
+            </div>
+            <div class="hero-chips" id="hero-modes"></div>
           </div>
-          <div class="hero-chips" id="hero-modes"></div>
+          <aside class="hero-spec">
+            <div class="spec-head"><span class="dot"></span> SERVER STATUS <b>LIVE</b></div>
+            <div class="spec-readout"><b>60</b><span>HZ AUTHORITATIVE<br />TICK RATE</span></div>
+            <div class="spec-row"><span>NETCODE</span><b>SERVER-SIDE</b></div>
+            <div class="spec-row"><span>HIT REG</span><b>LAG COMPENSATED</b></div>
+            <div class="spec-row"><span>INSTALL</span><b>0 MB</b></div>
+            <div class="spec-foot">NO CLIENT DOWNLOAD / NO LAUNCHER</div>
+          </aside>
         </div>
 
         <div class="subnav">
-          <button class="subbtn active" data-sub="quick">QUICKPLAY</button>
-          <button class="subbtn" data-sub="browse">SERVER BROWSER</button>
+          <button class="subbtn active" data-sub="quick">DEPLOY</button>
+          <button class="subbtn" data-sub="browse">SERVER LIST</button>
           <button class="subbtn" data-sub="create">CREATE ROOM</button>
         </div>
 
@@ -88,7 +100,7 @@
           <div class="table-wrap">
             <table class="rooms">
               <thead><tr><th>ROOM</th><th>MODE</th><th>MAP</th><th>PLAYERS</th><th>STATE</th><th></th></tr></thead>
-              <tbody id="room-list"><tr><td colspan="6" class="muted">NO PUBLIC ROOMS — CREATE ONE OR HIT QUICKPLAY</td></tr></tbody>
+              <tbody id="room-list"><tr><td colspan="6" class="muted">NO PUBLIC ROOMS. START ONE OR USE DEPLOY.</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -113,7 +125,7 @@
           </div>
           <div class="row between">
             <div class="muted small">Custom rules are validated server-side. Great for scrims, aim practice and absolute chaos.</div>
-            <button class="primary big" id="btn-create">CREATE &amp; DEPLOY <span>→</span></button>
+            <button class="primary big" id="btn-create">CREATE ROOM</button>
           </div>
         </div>
       </div>
@@ -121,7 +133,7 @@
       <!-- SHOP -->
       <div class="panel" data-panel="shop">
         <header class="panel-head">
-          <div><div class="kicker">ARMORY</div><h2>THE BLACK MARKET</h2><p>Cosmetics only. No pay-to-win, ever. Credits are earned by playing.</p></div>
+          <div><div class="kicker">ARMORY / 02</div><h2>QUARTERMASTER</h2><p>Cosmetics from the unit stores. No stat advantages; credits come from matches.</p></div>
           <div class="balance"><span>BALANCE</span><b id="shop-coins">900</b><small>CR</small></div>
         </header>
         <div class="subnav" id="shop-tabs">
@@ -135,7 +147,7 @@
       <!-- LOADOUT -->
       <div class="panel" data-panel="loadout">
         <header class="panel-head">
-          <div><div class="kicker">OPERATOR</div><h2>LOADOUT</h2><p>Loadout sets your free deathmatch kit and your starting sidearm in Bomb Defusal.</p></div>
+          <div><div class="kicker">KIT / 03</div><h2>LOADOUT</h2><p>Primary and sidearm for free deathmatch. Your sidearm is the opening pistol in Bomb Defusal.</p></div>
         </header>
         <div class="split loadout">
           <div class="form-grid">
@@ -153,7 +165,12 @@
             </div>
           </div>
           <div class="loadout-preview">
-            <div class="lp-gun" id="lp-gun"><div class="lp-gun-body"></div><div class="lp-gun-barrel"></div><div class="lp-mag"></div></div>
+            <div class="lp-plate" id="lp-gun">
+              <span class="lp-index">01</span>
+              <span class="lp-label">PRIMARY / RIFLE</span>
+              <span class="lp-finish-strip"></span>
+              <span class="lp-plate-foot">SERVICE WEAPON / LOADOUT</span>
+            </div>
             <h4 id="lp-title">VK-47 RIFLE</h4>
             <p id="lp-desc">Reliable, hard-hitting, unforgiving. The VK-47 rewards disciplined bursts.</p>
             <div class="statline"><span>DAMAGE</span><div class="bar"><i id="lp-dmg"></i></div></div>
@@ -166,8 +183,8 @@
       <!-- MAPS -->
       <div class="panel" data-panel="maps">
         <header class="panel-head">
-          <div><div class="kicker">WORKSHOP</div><h2>MAP CREATOR</h2><p>Box out an arena in 3D, drop spawns and objectives, then playtest it instantly with friends.</p></div>
-          <button class="primary big" id="btn-open-editor">OPEN EDITOR <span>→</span></button>
+          <div><div class="kicker">WORKSHOP / 04</div><h2>MAPLAB</h2><p>Block out an arena, mark spawns and objectives, then playtest it without leaving the browser.</p></div>
+          <button class="primary big" id="btn-open-editor">OPEN EDITOR</button>
         </header>
         <div class="split">
           <div>
@@ -184,7 +201,7 @@
       <!-- SETTINGS -->
       <div class="panel" data-panel="settings">
         <header class="panel-head">
-          <div><div class="kicker">SYSTEM</div><h2>SETTINGS</h2><p>Tune the experience. Everything saves locally on this browser.</p></div>
+          <div><div class="kicker">SYSTEM / 05</div><h2>CONFIG</h2><p>Controls, display and performance. Stored on this browser.</p></div>
           <button class="ghost" id="btn-reset-settings">RESET DEFAULTS</button>
         </header>
         <div class="settings-grid">
@@ -199,30 +216,30 @@
           <div class="setting">
             <div class="set-head"><span>RENDER QUALITY</span><b id="st-quality-v">HIGH</b></div>
             <select id="st-quality">
-              <option value="low">LOW — MAX FPS</option>
+              <option value="low">LOW / MAX FPS</option>
               <option value="medium">MEDIUM</option>
-              <option value="high" selected>HIGH — SHADOWS</option>
+              <option value="high" selected>HIGH / SHADOWS</option>
             </select>
           </div>
           <div class="setting">
-            <div class="set-head"><span>UPSCALER (DLSS-STYLE)</span><b id="st-upscale-v">QUALITY</b></div>
+            <div class="set-head"><span>SPATIAL UPSCALER</span><b id="st-upscale-v">QUALITY</b></div>
             <select id="st-upscale">
-              <option value="native">NATIVE — NO UPSCALE</option>
-              <option value="quality" selected>QUALITY — 88% INTERNAL</option>
-              <option value="balanced">BALANCED — 78% INTERNAL</option>
-              <option value="performance">PERFORMANCE — 66% INTERNAL</option>
-              <option value="ultra">ULTRA PERFORMANCE — 53% INTERNAL</option>
+              <option value="native">NATIVE</option>
+              <option value="quality" selected>QUALITY / 88%</option>
+              <option value="balanced">BALANCED / 78%</option>
+              <option value="performance">PERFORMANCE / 66%</option>
+              <option value="ultra">ULTRA / 53%</option>
             </select>
-            <label class="check"><input type="checkbox" id="st-dynamic" checked /> ADAPTIVE RESOLUTION TARGET</label>
-            <p class="hint">Browsers cannot call NVIDIA DLSS — it is a native driver feature. This is our edge-aware spatial + CAS upscaler with adaptive resolution, the closest browser equivalent.</p>
+            <label class="check"><input type="checkbox" id="st-dynamic" checked /> ADAPTIVE RESOLUTION</label>
+            <p class="hint">Browsers cannot call NVIDIA DLSS. This is a spatial upscaler with adaptive resolution and a CAS sharpen pass.</p>
           </div>
           <div class="setting">
             <div class="set-head"><span>MASTER VOLUME</span><b id="st-vol-v">65</b></div>
             <input type="range" id="st-vol" min="0" max="1" step="0.05" value="0.65" />
           </div>
           <div class="setting">
-            <div class="set-head"><span>CROSSHAIR COLOUR</span><b id="st-ch-v">#3AFF9E</b></div>
-            <input type="color" id="st-ch" value="#3aff9e" />
+            <div class="set-head"><span>CROSSHAIR COLOUR</span><b id="st-ch-v">#C9F24D</b></div>
+            <input type="color" id="st-ch" value="#c9f24d" />
           </div>
           <div class="setting">
             <div class="set-head"><span>SHADOWS</span><b id="st-shadows-v">ON</b></div>
@@ -287,7 +304,7 @@
       <div id="weapon-panel">
         <div class="w-name" id="hud-weapon">P9 SIDEARM</div>
         <div class="ammo"><b id="hud-mag">15</b><span>/</span><i id="hud-reserve">60</i></div>
-        <div class="w-extras"><span id="hud-grenades">◍ 0</span><span id="hud-role"></span></div>
+        <div class="w-extras"><span id="hud-grenades">FRAG 0</span><span id="hud-role"></span></div>
       </div>
 
       <div id="hud-chat"></div>
@@ -295,8 +312,8 @@
         <span>SAY</span><input id="chat-input" maxlength="140" placeholder="message your lobby…" autocomplete="off" />
       </div>
 
-      <div id="perf"><span id="perf-fps">60</span> FPS <i>·</i> <span id="perf-ping">0</span> MS <i>·</i> <span id="perf-upscale">—</span></div>
-      <div id="hud-hint">WASD MOVE · SPACE JUMP · SHIFT WALK · CTRL CROUCH · B BUY · TAB SCORES · T CHAT</div>
+      <div id="perf"><span id="perf-fps">60</span> FPS <i>/</i> <span id="perf-ping">0</span> MS <i>/</i> <span id="perf-upscale">—</span></div>
+      <div id="hud-hint">WASD MOVE / SPACE JUMP / SHIFT WALK / CTRL CROUCH / B BUY / TAB SCORES / T CHAT</div>
       <div id="respawn" class="hidden">RESPAWN IN <b id="respawn-time">3</b></div>
 
       <div id="death-screen" class="hidden">
@@ -314,7 +331,7 @@
           <div class="balance"><span>FUNDS</span><b id="buy-money">$0</b></div>
         </div>
         <div class="buy-grid" id="buy-grid"></div>
-        <div class="overlay-foot"><span><kbd>1</kbd>–<kbd>9</kbd> BUY · <kbd>B</kbd>/<kbd>ESC</kbd> CLOSE</span><span class="muted">Costs are deducted server-side.</span></div>
+        <div class="overlay-foot"><span><kbd>1</kbd>-<kbd>9</kbd> BUY / <kbd>B</kbd> OR <kbd>ESC</kbd> CLOSE</span><span class="muted">Charges are validated server-side.</span></div>
       </div>
 
       <div id="scoreboard" class="overlay hidden">
@@ -338,7 +355,7 @@
         <div class="results-card">
           <div class="kicker" id="res-kicker">MATCH COMPLETE</div>
           <h2 id="res-title">VICTORY</h2>
-          <div class="res-score" id="res-score">8 — 5</div>
+          <div class="res-score" id="res-score">8 / 5</div>
           <div class="res-stats">
             <div><span>FRAGS</span><b id="res-kills">0</b></div>
             <div><span>DEATHS</span><b id="res-deaths">0</b></div>
@@ -369,16 +386,16 @@
           <span id="ed-status" class="muted">READY</span>
         </div>
         <div class="row gap">
-          <button class="ghost" id="ed-exit">← BACK</button>
+          <button class="ghost" id="ed-exit">EXIT</button>
           <button class="ghost" id="ed-save">SAVE</button>
           <button class="ghost" id="ed-publish">PUBLISH</button>
-          <button class="primary" id="ed-test">TEST PLAY →</button>
+          <button class="primary" id="ed-test">PLAYTEST</button>
         </div>
       </header>
       <aside class="editor-tools">
-        <h4>BRUSH</h4>
+        <h4>MATERIAL</h4>
         <div class="tool-grid" id="ed-materials"></div>
-        <h4>SHAPE</h4>
+        <h4>DIMENSIONS</h4>
         <div class="form-grid tight">
           <label>WIDTH<input type="number" id="ed-w" value="4" min="1" max="24" step="1" /></label>
           <label>HEIGHT<input type="number" id="ed-h" value="3" min="0.4" max="20" step="0.4" /></label>
@@ -387,22 +404,22 @@
         </div>
         <h4>TOOL</h4>
         <div class="tool-col">
-          <button class="toolbtn active" data-tool="place">▣ PLACE BLOCK</button>
-          <button class="toolbtn" data-tool="erase">⌫ ERASE</button>
-          <button class="toolbtn" data-tool="spawnA">▲ SPAWN — VANGUARD</button>
-          <button class="toolbtn" data-tool="spawnB">▼ SPAWN — SENTINEL</button>
-          <button class="toolbtn" data-tool="site">◉ BOMB SITE</button>
-          <button class="toolbtn" data-tool="hill">◎ KOTH HILL</button>
+          <button class="toolbtn active" data-tool="place"><span class="tool-code">01</span> PLACE BLOCK</button>
+          <button class="toolbtn" data-tool="erase"><span class="tool-code">02</span> ERASE</button>
+          <button class="toolbtn" data-tool="spawnA"><span class="tool-code">03</span> SPAWN / VANGUARD</button>
+          <button class="toolbtn" data-tool="spawnB"><span class="tool-code">04</span> SPAWN / SENTINEL</button>
+          <button class="toolbtn" data-tool="site"><span class="tool-code">05</span> BOMB SITE</button>
+          <button class="toolbtn" data-tool="hill"><span class="tool-code">06</span> KOTH HILL</button>
         </div>
-        <h4>OBJECTS</h4>
+        <h4>SCENE</h4>
         <div class="editor-counts">
           <span>BLOCKS <b id="ed-count">0</b></span>
           <span>SPAWNS <b id="ed-spawns">0</b></span>
           <span>SITES <b id="ed-sites">0</b></span>
         </div>
         <div class="editor-help">
-          <b>CAMERA</b> hold <kbd>RMB</kbd> to orbit · <kbd>WHEEL</kbd> zoom · <kbd>WASD</kbd> pan<br />
-          <b>PLACE</b> <kbd>LMB</kbd> on the grid · <b>ERASE</b> <kbd>LMB</kbd> a block
+          <b>CAMERA</b> hold <kbd>RMB</kbd> orbit / <kbd>WHEEL</kbd> zoom / <kbd>WASD</kbd> pan<br />
+          <b>PLACE</b> <kbd>LMB</kbd> on the grid / <b>ERASE</b> <kbd>LMB</kbd> a block
         </div>
         <div class="row gap wrap">
           <button class="ghost small" id="ed-clear">CLEAR</button>
@@ -415,7 +432,7 @@
         <canvas id="editor-canvas"></canvas>
         <div class="editor-overlay">
           <span id="ed-hover">—</span>
-          <span class="muted">grid 1m · max 1400 blocks</span>
+          <span class="muted">GRID 1 M / LIMIT 1400</span>
         </div>
       </div>
     </div>

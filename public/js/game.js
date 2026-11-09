@@ -1065,7 +1065,7 @@ export class Game {
         this.shake = 0.9;
         break;
       }
-      case 'plant': this.audio.plant(); this.hud?.showBanner?.('SPIKE PLANTED', `SITE ${ev.site} · 40s`, 2600, 'danger'); break;
+      case 'plant': this.audio.plant(); this.hud?.showBanner?.('SPIKE PLANTED', `SITE ${ev.site} / 40s`, 2600, 'danger'); break;
       case 'defuse': this.audio.defuse(); this.hud?.showBanner?.('SPIKE DEFUSED', 'ROUND SECURED', 2200, 'good'); break;
       case 'nade': this.audio.shoot('throw', ev.pos); break;
       case 'roundStart': this.audio.roundStart(); this.hud?.showBanner?.(`ROUND ${ev.round}`, '', 1500, 'neutral'); break;
@@ -1113,7 +1113,7 @@ export class Game {
         break;
       }
       case 'reload': this.audio.reload(ev.dur || 2); break;
-      case 'levelup': this.audio.levelUp(); this.hud?.showBanner?.(`GUN GAME · TIER ${ev.level + 1}`, WEAPONS[ev.w]?.name || '', 2000, 'good'); break;
+      case 'levelup': this.audio.levelUp(); this.hud?.showBanner?.(`GUN GAME / TIER ${ev.level + 1}`, WEAPONS[ev.w]?.name || '', 2000, 'good'); break;
       case 'backstab': this.hud?.showBanner?.('BACKSTAB', '', 900, 'danger'); break;
       default: break;
     }

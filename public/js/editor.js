@@ -69,14 +69,14 @@ export class MapEditor {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#080c12');
-    this.scene.fog = new THREE.Fog('#080c12', 80, 190);
+    this.scene.background = new THREE.Color('#0b0d09');
+    this.scene.fog = new THREE.Fog('#0b0d09', 80, 190);
     this.camera = new THREE.PerspectiveCamera(58, 1, 0.1, 500);
-    this.scene.add(new THREE.HemisphereLight(0xbcd4ee, 0x20242c, 1.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+    this.scene.add(new THREE.HemisphereLight(0xb8b29e, 0x161a12, 1.4));
+    const sun = new THREE.DirectionalLight(0xffd9a8, 2.0);
     sun.position.set(36, 58, 22);
     this.scene.add(sun);
-    const grid = new THREE.GridHelper(100, 100, 0x3a4a5c, 0x1b2634);
+    const grid = new THREE.GridHelper(100, 100, 0x4b513d, 0x24281e);
     grid.position.y = 0.01;
     this.scene.add(grid);
     this.worldGroup = new THREE.Group();
@@ -84,7 +84,7 @@ export class MapEditor {
     this.markerGroup = new THREE.Group();
     this.scene.add(this.markerGroup);
 
-    const ghostMat = new THREE.MeshBasicMaterial({ color: 0x58f0a8, transparent: true, opacity: 0.28, depthWrite: false });
+    const ghostMat = new THREE.MeshBasicMaterial({ color: 0xd95b2b, transparent: true, opacity: 0.28, depthWrite: false });
     this.ghost = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), ghostMat);
     this.ghost.visible = false;
     this.scene.add(this.ghost);
@@ -140,7 +140,7 @@ export class MapEditor {
       btn.className = `mat-swatch${id === this.material ? ' active' : ''}`;
       btn.dataset.mat = id;
       btn.title = id.toUpperCase();
-      btn.style.background = `linear-gradient(140deg, ${meta.color}, ${meta.emissive || '#0b0f14'})`;
+      btn.style.background = `linear-gradient(140deg, ${meta.color} 0 58%, ${meta.emissive || '#0b0f14'} 58% 100%)`;
       btn.addEventListener('click', () => {
         this.material = id;
         mats.querySelectorAll('.mat-swatch').forEach((b) => b.classList.toggle('active', b === btn));
@@ -328,10 +328,10 @@ export class MapEditor {
     this.ghost.scale.set(s.w, s.h, s.d);
     this.ghost.position.set(x, s.y + s.h / 2, z);
     this.ghost.visible = this.tool === 'place';
-    this.ghost.material.color.set(this.tool === 'place' ? 0x58f0a8 : 0xff4c5a);
+    this.ghost.material.color.set(this.tool === 'place' ? 0xd95b2b : 0xd4574a);
     const hover = document.getElementById('ed-hover');
     if (hover) {
-      if (this.tool === 'place') hover.textContent = `PLACE ${this.material.toUpperCase()} · ${s.w}×${s.h}×${s.d} @ ${x}, ${s.y}, ${z}`;
+      if (this.tool === 'place') hover.textContent = `PLACE ${this.material.toUpperCase()} / ${s.w}×${s.h}×${s.d} @ ${x}, ${s.y}, ${z}`;
       else if (this.tool === 'erase') hover.textContent = 'CLICK A BLOCK TO DELETE';
       else hover.textContent = `${this.tool.toUpperCase()} @ ${x}, ${z}`;
     }
@@ -392,7 +392,7 @@ export class MapEditor {
   serialize() {
     return {
       name: this.map.name || 'CUSTOM MAP',
-      tagline: 'Player-built arena · MapLAB',
+      tagline: 'Player-built arena / MapLAB',
       halfX: this.map.halfX, halfZ: this.map.halfZ,
       blocks: this.map.blocks.map((b) => ({ ...b })),
       spawns: this.map.spawns.map((s) => ({ ...s })),
